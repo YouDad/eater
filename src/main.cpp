@@ -12,33 +12,39 @@ int main(int argc, const char **argv)
 	ret = arg_parse(argc, argv);
 	if (ret) {
 		perror("arg_parse");
+		return 1;
 	}
 
 	uint32_t addr;
 	ret = get_ip(addr);
 	if (ret) {
 		perror("get_ip");
+		return 1;
 	}
 
 	uint32_t port;
 	ret = get_port(port);
 	if (ret) {
 		perror("get_port");
+		return 1;
 	}
 
 	ret = connect(addr, port);
 	if (ret) {
 		perror("connect");
+		return 1;
 	}
 
 	ret = start_read_thread();
 	if (ret) {
 		perror("start_read_thread");
+		return 1;
 	}
 
 	ret = start_heartbeat_thread();
 	if (ret) {
 		perror("start_heartbeat_thread");
+		return 1;
 	}
 
 	int map_line_size = get_map_size();
