@@ -4,34 +4,27 @@
 int main()
 {
 	char map1[] =
+		"[MAP A@ "
 		"12345"
-		"asdwg"
+		"asdwG"
 		"99999"
 		"54321"
-		"12345";
+		"12345"
+		"][LOCATION A@ 5 6 7 8][SCORE 10 1 2 3]";
 	char map2[] =
+		"[MAP A@ "
 		"12345"
-		"0sdwg"
+		"0sdwG"
 		"99999"
 		"54321"
-		"a2345";
-	std::vector<int> positions;
-	positions.push_back(20);
-	positions.push_back(6);
-	positions.push_back(7);
-	positions.push_back(8);
+		"a2345"
+		"][LOCATION A@ 20 6 7 8][SCORE 10 1 2 3]";
 
-	std::vector<int> scores;
-	scores.push_back(10);
-	scores.push_back(1);
-	scores.push_back(2);
-	scores.push_back(3);
+	class server_data data1(map1, 5, 0);
+	class server_data data2(map2, 5, 0);
 
-	class server_data data1(map1, 5, 0, positions, scores);
-	class server_data data2(map2, 5, 0, positions, scores);
-
-	int score1;
-	int score2;
+	double score1;
+	double score2;
 	assert(evaluate(data1, score1) == 0);
 	assert(evaluate(data2, score2) == 0);
 	assert(score1 < score2);
