@@ -49,6 +49,9 @@ class server_data {
 		 * - 1: 失败
 		 * */
 		int fire();
+
+		/* 是否结束 */
+		bool over();
 	protected:
 		// 设置地图上某点的字符
 		// 越界返回1

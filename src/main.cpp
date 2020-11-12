@@ -76,6 +76,9 @@ int main(int argc, const char **argv)
 		draw(buf, map_line_size, player_id);
 
 		class server_data data(buf, map_line_size, player_id);
+		if (data.over()) {
+			continue;
+		}
 
 		auto op = algorithm(data);
 		send_operating(op.first, op.second);

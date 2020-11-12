@@ -240,3 +240,8 @@ int server_data::set(int row, int col, char ch)
 	_map[row * _size + col] = ch;
 	return 0;
 }
+
+bool server_data::over()
+{
+	return _positions[_id] == -1;
+}
