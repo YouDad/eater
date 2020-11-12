@@ -11,14 +11,15 @@
 
 #include "modules/network.h"
 
-const char *key = "(c96f4d7661c94cbb9706469649a7cbbc)";
+const char *key = "12496b829e7c486fbb1a47cbb345e004";
 static int socket_fd;
 
 static std::thread *read_thread_p;
 static std::thread *heartbeat_thread_p;
 static std::atomic<bool> read_thread_over;
 static std::atomic<bool> heartbeat_thread_over;
-static std::mutex mutex;
+static std::mutex data_mutex;
+static std::mutex map_size_mutex;
 
 static int map_size;
 static int player_id;
@@ -26,6 +27,16 @@ static int player_id;
 static char token[4];
 static char *map;
 static bool game_over;
+
+int my_send(const char *str)
+{
+#ifdef NETWORK_DEBUG
+	printf("send: \"%s\"\n", str);
+#endif
+	static char buf[32];
+	sprintf(buf, "(%s)", str);
+	return send(socket_fd, buf, strlen(buf), 0);
+}
 
 int connect(uint32_t ip_addr, uint32_t port)
 {
@@ -51,13 +62,15 @@ int connect(uint32_t ip_addr, uint32_t port)
 		return 1;
 	}
 
+	printf("connecting: %s:%d\n", addr, port);
 	ret = connect(socket_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 	if (ret < 0) {
 		perror("connect");
 		return 1;
 	}
+	printf("connected: %s:%d\n", addr, port);
 
-	ret = send(socket_fd, key, strlen(key), 0);
+	ret = my_send(key);
 	if (ret < 0) {
 		perror("send");
 		return 1;
@@ -65,8 +78,13 @@ int connect(uint32_t ip_addr, uint32_t port)
 
 	char buf[16];
 	ret = recv(socket_fd, buf, sizeof(buf), 0);
-	if (strstr(buf, "[OK]") != buf) {
+	if (ret < 0) {
 		perror("recv");
+		return 1;
+	}
+
+	if (strstr(buf, "[OK]") != buf) {
+		perror("strstr");
 		printf("recv string[%d]: \"%s\"\n", ret, buf);
 		return 1;
 	}
@@ -76,49 +94,68 @@ int connect(uint32_t ip_addr, uint32_t port)
 
 int start_read_thread()
 {
-	mutex.lock();
+	data_mutex.lock();
 	read_thread_over = false;
+	game_over = false;
 	read_thread_p = new std::thread([&]() -> void {
 		static int buf_size = 16;
 		static char *buf = new char[buf_size];
 
 		while (!read_thread_over) {
 			int ret = recv(socket_fd, buf, buf_size, 0);
-			printf("recv[%d/%d]: %s\n", ret, buf_size, buf);
-
-			if (ret == 0) {
-				return;
-			}
-
 			if (ret < 0) {
 				perror("recv");
 				break;
 			}
 
+			buf[ret] = 0;
+#ifdef NETWORK_DEBUG
+			printf("recv[%d/%d]: %s\n", ret, buf_size, buf);
+#endif
+
+			if (ret == 0) {
+				return;
+			}
+
+			if (strstr(buf, "[ERROR") == buf) {
+				continue;
+			}
+
 			if (strstr(buf, "[OK") == buf) {
 				continue;
 			}
+
 			if (strstr(buf, "[START") == buf) {
 				ret = sscanf(buf, "[START %d %d]", &player_id, &map_size);
 				if (ret != 2) {
 					printf("start recv: %s\n", buf);
 					break;
 				}
+				map_size_mutex.unlock();
 
 				delete []buf;
 				buf_size = map_size * map_size + 100;
 				buf = new char[buf_size];
 				map = new char[buf_size];
-				send(socket_fd, "(READY)", sizeof("(READY)"), 0);
+				my_send("READY");
 			}
+
 			if (strstr(buf, "[MAP") == buf) {
 				strcpy(map, buf);
 				sscanf(map, "[MAP %s", token);
-				mutex.unlock();
+				data_mutex.unlock();
 				continue;
 			}
+
+			if (strstr(buf, "[ROUNDOVER") == buf) {
+				game_over = true;
+				data_mutex.unlock();
+				continue;
+			}
+
 			if (strstr(buf, "[GAMEOVER") == buf) {
 				game_over = true;
+				data_mutex.unlock();
 				continue;
 			}
 		}
@@ -142,13 +179,13 @@ int start_heartbeat_thread()
 	heartbeat_thread_over = false;
 	heartbeat_thread_p = new std::thread([&]() -> void {
 		while (!heartbeat_thread_over) {
-			int ret = send(socket_fd, "(H)", sizeof("(H)"), 0);
-			if (ret < 0) {
-				perror("send");
-				return;
-			}
+			// int ret = my_send("H");
+			// if (ret < 0) {
+			//     perror("send");
+			//     return;
+			// }
 
-			sleep(1);
+			sleep(5);
 		}
 	});
 	return 0;
@@ -170,6 +207,10 @@ int disconnect()
 
 int get_map_size()
 {
+	if (map_size == 0) {
+		map_size_mutex.try_lock();
+		map_size_mutex.lock();
+	}
 	return map_size;
 }
 
@@ -180,7 +221,7 @@ int get_player_id()
 
 int get_server_data(char *buf)
 {
-	mutex.lock();
+	data_mutex.lock();
 	if (game_over) {
 		return 2;
 	}
@@ -212,8 +253,10 @@ int send_operating(enum move_operating move_op, bool is_fire)
 			break;
 	}
 
-	sprintf(op, "%s[%c%c]", token, move, fire);
-	send(socket_fd, op, strlen(op), 0);
+	sprintf(op, "%s%c%c", token, move, fire);
+	my_send(op);
+#ifdef NETWORK_DEBUG
 	printf("send_operating: %s\n", op);
+#endif
 	return 0;
 }
