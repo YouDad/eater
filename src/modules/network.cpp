@@ -1,3 +1,4 @@
+// #define NETWORK_DEBUG
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -11,7 +12,7 @@
 
 #include "modules/network.h"
 
-const char *key = "12496b829e7c486fbb1a47cbb345e004";
+const char *key = "4ab1884c6d5e442c819d1716ae4825b2";
 static int socket_fd;
 
 static std::thread *read_thread_p;
@@ -149,6 +150,7 @@ int start_read_thread()
 
 			if (strstr(buf, "[ROUNDOVER") == buf) {
 				game_over = true;
+				read_thread_over = true;
 				data_mutex.unlock();
 				continue;
 			}
