@@ -4,6 +4,7 @@
 #include "modules/network.h"
 #include "modules/map_parser.h"
 #include "modules/algorithm.h"
+#include "modules/draw.h"
 
 int main(int argc, const char **argv)
 {
@@ -54,12 +55,18 @@ int main(int argc, const char **argv)
 	}
 
 	int player_id = get_player_id();
+	printf("data:\n");
+	for (int i = 0; i < map_line_size; i++) {
+		printf("\n");
+	}
 
 	while (true) {
 		ret = get_server_data(buf);
 		if (ret == 2) {
 			break;
 		}
+
+		draw(buf, map_line_size, player_id);
 
 		class server_data data(buf, map_line_size, player_id);
 
