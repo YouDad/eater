@@ -123,7 +123,7 @@ int server_data::move(enum move_operating move_op)
 	int r, c;
 	get_my_pos(r, c);
 
-	char direction = ' ';
+	char direction = '?';
 	// delta row, delta col
 	int dr = 0, dc = 0;
 	switch (move_op) {
@@ -142,9 +142,6 @@ int server_data::move(enum move_operating move_op)
 		case move_op_right:
 			direction = 'd';
 			dc = 1;
-			break;
-		case move_op_stay:
-			direction = ' ';
 			break;
 	}
 

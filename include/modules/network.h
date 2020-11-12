@@ -9,7 +9,7 @@
  * - 0: 成功
  * - 1: 失败
  * */
-int connect(uint32_t ip_addr, uint32_t port);
+int connect(uint32_t ip_addr, uint32_t port, const char *key);
 
 /* 开启读线程，响应START/MAP/GAMEOVER数据包
  * 返回值:

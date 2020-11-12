@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 
+char key[40];
 char ip[32];
 uint32_t port_number;
 bool have_port = false;
 bool have_ip = false;
+bool have_key = false;
 
 int arg_parse(int argc, const char **argv)
 {
@@ -22,6 +24,15 @@ int arg_parse(int argc, const char **argv)
 				int ret = sscanf(argv[i + 1], "%d", &port_number);
 				if (ret == 1) {
 					have_port = true;
+				}
+			}
+		}
+
+		if (strcmp(argv[i], "--key") == 0 && i + 1 < argc) {
+			if (strlen(argv[i + 1]) <= 40) {
+				int ret = sscanf(argv[i + 1], "%[0-9a-f]", key);
+				if (ret == 1) {
+					have_key = true;
 				}
 			}
 		}
@@ -67,6 +78,15 @@ int get_port(uint32_t &port)
 {
 	if (have_port && 0 <= port_number && port_number < 65536) {
 		port = port_number;
+		return 0;
+	}
+	return 1;
+}
+
+int get_key(char *k)
+{
+	if (have_key) {
+		strcpy(k, key);
 		return 0;
 	}
 	return 1;

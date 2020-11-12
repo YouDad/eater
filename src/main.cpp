@@ -30,7 +30,14 @@ int main(int argc, const char **argv)
 		return 1;
 	}
 
-	ret = connect(addr, port);
+	char key[40];
+	ret = get_key(key);
+	if (ret) {
+		perror("get_key");
+		return 1;
+	}
+
+	ret = connect(addr, port, key);
 	if (ret) {
 		perror("connect");
 		return 1;

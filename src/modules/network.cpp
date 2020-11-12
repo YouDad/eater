@@ -12,7 +12,6 @@
 
 #include "modules/network.h"
 
-const char *key = "4ab1884c6d5e442c819d1716ae4825b2";
 static int socket_fd;
 
 static std::thread *read_thread_p;
@@ -39,7 +38,7 @@ int my_send(const char *str)
 	return send(socket_fd, buf, strlen(buf), 0);
 }
 
-int connect(uint32_t ip_addr, uint32_t port)
+int connect(uint32_t ip_addr, uint32_t port, const char *key)
 {
 	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (socket_fd < 0) {
@@ -234,7 +233,7 @@ int get_server_data(char *buf)
 int send_operating(enum move_operating move_op, bool is_fire)
 {
 	char op[16];
-	char move = ' ';
+	char move;
 	char fire = is_fire ? 'v' : ' ';
 
 	switch(move_op) {
@@ -249,9 +248,6 @@ int send_operating(enum move_operating move_op, bool is_fire)
 			break;
 		case move_op_right:
 			move = 'd';
-			break;
-		case move_op_stay:
-			move = ' ';
 			break;
 	}
 

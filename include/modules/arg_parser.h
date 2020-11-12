@@ -29,3 +29,13 @@ int get_ip(uint32_t &addr);
  * - 1: 失败
  * */
 int get_port(uint32_t &port);
+
+/* 从命令行中获得key
+ * 参数:
+ * - k: 缓冲区，结果是key
+ *         由调用者初始化
+ * 返回值:
+ * - 0: 成功
+ * - 1: 失败
+ * */
+int get_key(char *k);
