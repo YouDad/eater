@@ -189,35 +189,40 @@ std::pair<enum move_operating, bool> algorithm(class server_data &m)
 	int my_score = m.get_my_score();
 	int max_score = 0;
 	int this_score;
+	int ret;
 
 	auto normal_evaluate = [&](enum move_operating _move) -> void {
 		class server_data cloned = m.clone();
-		cloned.move(_move);
-		evaluate(cloned, situation_point);
-		this_score = cloned.get_my_score() - my_score;
-		if (max_score < this_score) {
-			max_score = cloned.get_my_score() - my_score;
-			max_situation_point = situation_point;
-			move = _move;
-			fire = false;
-		} else if (max_score == this_score && max_situation_point < situation_point) {
-			max_situation_point = situation_point;
-			move = _move;
-			fire = false;
+		ret = cloned.move(_move);
+		if (ret == 0) {
+			evaluate(cloned, situation_point);
+			this_score = cloned.get_my_score() - my_score;
+			if (max_score < this_score) {
+				max_score = cloned.get_my_score() - my_score;
+				max_situation_point = situation_point;
+				move = _move;
+				fire = false;
+			} else if (max_score == this_score && max_situation_point < situation_point) {
+				max_situation_point = situation_point;
+				move = _move;
+				fire = false;
+			}
 		}
 
-		cloned.fire();
-		evaluate(cloned, situation_point);
-		this_score = cloned.get_my_score() - my_score;
-		if (max_score < this_score) {
-			max_score = cloned.get_my_score() - my_score;
-			max_situation_point = situation_point;
-			move = _move;
-			fire = true;
-		} else if (max_score == this_score && max_situation_point < situation_point) {
-			max_situation_point = situation_point;
-			move = _move;
-			fire = true;
+		ret = cloned.fire();
+		if (ret == 0) {
+			evaluate(cloned, situation_point);
+			this_score = cloned.get_my_score() - my_score;
+			if (max_score < this_score) {
+				max_score = cloned.get_my_score() - my_score;
+				max_situation_point = situation_point;
+				move = _move;
+				fire = true;
+			} else if (max_score == this_score && max_situation_point < situation_point) {
+				max_situation_point = situation_point;
+				move = _move;
+				fire = true;
+			}
 		}
 	};
 
