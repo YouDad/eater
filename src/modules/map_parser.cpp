@@ -1,3 +1,4 @@
+// #define MAP_PARSER_DEBUG
 #include "modules/map_parser.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -148,6 +149,9 @@ int server_data::move(enum move_operating move_op)
 	if (get(r, c) == direction) {
 		// 如果面朝上
 		char ch = get(r + dr, c + dc);
+#ifdef MAP_PARSER_DEBUG
+		printf("move: '%c', %d, %d\n", ch, r+dr, c+dc);
+#endif
 
 		if ('0' <= ch && ch <= '5') {
 			// 空地果子
@@ -198,6 +202,9 @@ int server_data::fire()
 	}
 
 	char ch = get(r + dr, c + dc);
+#ifdef MAP_PARSER_DEBUG
+	printf("fire: '%c', %d, %d\n", ch, r+dr, c+dc);
+#endif
 	switch (ch) {
 		case '0': case '1':
 		case '2': case '3':
