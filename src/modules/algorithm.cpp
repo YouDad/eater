@@ -1,9 +1,10 @@
 #include "modules/algorithm.h"
+#include <stdio.h>
 #include <queue>
 #include <cmath>
 #include <string.h>
 
-int evaluate(class server_data &m, int &score)
+int evaluate(class server_data &m, double &score)
 {
 	// 周围围一圈墙
 	int line_size = m.get_map_size();
@@ -38,9 +39,15 @@ int evaluate(class server_data &m, int &score)
 	int *dist_graph = new int[map_size];
 	memset(dist_graph, 0x7f, map_size * sizeof(int));
 	auto get_dist = [&](int row, int col) -> int {
+		if (get_pos(row, col) >= map_size) printf("get dist %d\n", get_pos(row, col));
+		if (get_pos(row, col) < 0) printf("get dist %d\n", get_pos(row, col));
 		return dist_graph[get_pos(row, col)];
 	};
 	auto set_dist = [&](int row, int col, int dist) -> void {
+		int pos = get_pos(row, col);
+		if (pos < 0 || pos >= map_size) {
+			return;
+		}
 		dist_graph[get_pos(row, col)] = dist;
 	};
 
@@ -59,6 +66,12 @@ int evaluate(class server_data &m, int &score)
 			bool have_value = m.get(tr, tc) != '9';
 			// 距离要更优
 			int move_dist = node.dist + 1 + (node.dir == dir);
+			if (tr < 0 || tr >= line_size) {
+				return;
+			}
+			if (tc < 0 || tc >= line_size) {
+				return;
+			}
 			have_value = have_value && move_dist <= get_dist(tr, tc);
 			if (have_value) {
 				pq.push(qnode(tr, tc, dir, move_dist));
@@ -138,11 +151,11 @@ int evaluate(class server_data &m, int &score)
 					}
 					break;
 
-				case 'g':
+				case 'G':
 					for (int di = i - 3; di <= i + 3; di++) {
 						for (int dj = j - 3; dj <= j + 3; dj++) {
 							int dist = get_manhattan_dist(i, j, di, dj);
-							if (dist <= 3) {
+							if (dist <= 3 && dist > 0) {
 								add_move_val(di, dj, -25.0 / dist);
 							}
 						}
@@ -161,30 +174,48 @@ int evaluate(class server_data &m, int &score)
 		}
 	}
 
+	delete []dist_graph;
+	delete []move_val;
+
 	return 0;
 }
 
 std::pair<enum move_operating, bool> algorithm(class server_data &m)
 {
-	class server_data cloned;
-	int score;
-	int max_score = -0x7f7f7f7f;
+	double situation_point;
+	double max_situation_point = -1e9;
 	enum move_operating move;
 	bool fire;
+	int my_score = m.get_my_score();
+	int max_score = 0;
+	int this_score;
 
 	auto normal_evaluate = [&](enum move_operating _move) -> void {
-		cloned = m.clone();
+		class server_data cloned = m.clone();
 		cloned.move(_move);
-		evaluate(cloned, score);
-		if (max_score < score) {
-			max_score = score;
+		evaluate(cloned, situation_point);
+		this_score = cloned.get_my_score() - my_score;
+		if (max_score < this_score) {
+			max_score = cloned.get_my_score() - my_score;
+			max_situation_point = situation_point;
+			move = _move;
+			fire = false;
+		} else if (max_score == this_score && max_situation_point < situation_point) {
+			max_situation_point = situation_point;
 			move = _move;
 			fire = false;
 		}
+
 		cloned.fire();
-		evaluate(cloned, score);
-		if (max_score < score) {
-			max_score = score;
+		evaluate(cloned, situation_point);
+		this_score = cloned.get_my_score() - my_score;
+		if (max_score < this_score) {
+			max_score = cloned.get_my_score() - my_score;
+			max_situation_point = situation_point;
+			move = _move;
+			fire = true;
+		} else if (max_score == this_score && max_situation_point < situation_point) {
+			max_situation_point = situation_point;
 			move = _move;
 			fire = true;
 		}
@@ -199,5 +230,4 @@ std::pair<enum move_operating, bool> algorithm(class server_data &m)
 	return std::make_pair(move, fire);
 }
 
-/* 炮弹移动 > 玩家移动 > 玩家开火 > 鬼移动
- * */
+/* 炮弹移动 > 玩家移动 > 玩家开火 > 鬼移动 */
