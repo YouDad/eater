@@ -47,6 +47,18 @@ int finish_heartbeat_thread();
  * */
 int disconnect();
 
+/* 获得地图大小
+ * 可阻塞
+ * 返回值: 地图边长
+ * */
+int get_map_size();
+
+/* 获得玩家编号
+ * 可阻塞
+ * 返回值: 玩家编号
+ * */
+int get_player_id();
+
 /* 获得一次服务器数据
  * 可堵塞
  * 参数:

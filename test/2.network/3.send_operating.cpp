@@ -19,7 +19,7 @@ int main()
 {
 	int ret;
 
-	ret = connect(0xff000001, 9000);
+	ret = connect(0x7f000001, 9000);
 	assert(ret == 1);
 
 	std::thread server_thread([]() ->void {
@@ -28,7 +28,7 @@ int main()
 		char buf[128];
 
 		listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-		if (listen_fd == -1) {
+		if (listen_fd < 0) {
 			perror("socket");
 			return;
 		}
@@ -39,19 +39,19 @@ int main()
 		server_addr.sin_port = htons(9000);
 
 		ret = bind(listen_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-		if (ret == 1) {
+		if (ret < 0) {
 			perror("bind");
 			return;
 		}
 
 		ret = listen(listen_fd, 10);
-		if (ret == -1) {
+		if (ret < 0) {
 			perror("listen");
 			return;
 		}
 
 		int conn_fd = accept(listen_fd, NULL, NULL);
-		if (conn_fd == -1) {
+		if (conn_fd < 0) {
 			perror("accept");
 			return;
 		}
@@ -75,7 +75,7 @@ int main()
 			"[MAP C! wwwwwwww00000000000000000]"
 			"[LOCATION C! 0 1 2 3 4 5 6 7]"
 			"[SCORE 0 0 0 0 0 0 0 0]";
-		send(conn_fd, data, sizeof(data), 0);
+		send(conn_fd, data, strlen(data), 0);
 
 		auto should_recv = [&](const char *should_recv_str) -> void {
 			n = recv(conn_fd, buf, 128, 0);
@@ -84,47 +84,60 @@ int main()
 			assert(strcmp(buf, should_recv_str) == 0);
 		};
 
-		should_recv("C!  ");
-		should_recv("C!w ");
-		should_recv("C!s ");
-		should_recv("C!a ");
-		should_recv("C!d ");
-		should_recv("C! v");
-		should_recv("C!wv");
-		should_recv("C!sv");
-		should_recv("C!av");
-		should_recv("C!dv");
+		should_recv("C![  ]");
+		should_recv("C![w ]");
+		should_recv("C![s ]");
+		should_recv("C![a ]");
+		should_recv("C![d ]");
+		should_recv("C![ v]");
+		should_recv("C![wv]");
+		should_recv("C![sv]");
+		should_recv("C![av]");
+		should_recv("C![dv]");
 
 		close(conn_fd);
 	});
 
-	ret = connect(0xff000001, 9000);
+	sleep(1);
+	ret = connect(0x7f000001, 9000);
 	assert(ret == 0);
 
 	ret = start_read_thread();
 	assert(ret == 0);
+	sleep(3);
+	int us = 10;
 
 	ret = send_operating(move_op_stay, false);
 	assert(ret == 0);
+	usleep(us);
 	ret = send_operating(move_op_up, false);
 	assert(ret == 0);
+	usleep(us);
 	ret = send_operating(move_op_down, false);
 	assert(ret == 0);
+	usleep(us);
 	ret = send_operating(move_op_left, false);
 	assert(ret == 0);
+	usleep(us);
 	ret = send_operating(move_op_right, false);
 	assert(ret == 0);
+	usleep(us);
 
 	ret = send_operating(move_op_stay, true);
 	assert(ret == 0);
+	usleep(us);
 	ret = send_operating(move_op_up, true);
 	assert(ret == 0);
+	usleep(us);
 	ret = send_operating(move_op_down, true);
 	assert(ret == 0);
+	usleep(us);
 	ret = send_operating(move_op_left, true);
 	assert(ret == 0);
+	usleep(us);
 	ret = send_operating(move_op_right, true);
 	assert(ret == 0);
+	usleep(us);
 
 	ret = finish_read_thread();
 	assert(ret == 0);

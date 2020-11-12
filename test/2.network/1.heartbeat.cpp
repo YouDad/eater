@@ -19,7 +19,7 @@ int main()
 {
 	int ret;
 
-	ret = connect(0xff000001, 9000);
+	ret = connect(0x7f000001, 9000);
 	assert(ret == 1);
 
 	std::thread server_thread([]() ->void {
@@ -28,7 +28,7 @@ int main()
 		char buf[128];
 
 		listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-		if (listen_fd == -1) {
+		if (listen_fd < 0) {
 			perror("socket");
 			return;
 		}
@@ -39,19 +39,19 @@ int main()
 		server_addr.sin_port = htons(9000);
 
 		ret = bind(listen_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-		if (ret == 1) {
+		if (ret < 0) {
 			perror("bind");
 			return;
 		}
 
 		ret = listen(listen_fd, 10);
-		if (ret == -1) {
+		if (ret < 0) {
 			perror("listen");
 			return;
 		}
 
 		int conn_fd = accept(listen_fd, NULL, NULL);
-		if (conn_fd == -1) {
+		if (conn_fd < 0) {
 			perror("accept");
 			return;
 		}
@@ -76,7 +76,8 @@ int main()
 		close(conn_fd);
 	});
 
-	ret = connect(0xff000001, 9000);
+	sleep(1);
+	ret = connect(0x7f000001, 9000);
 	assert(ret == 0);
 
 	ret = start_heartbeat_thread();
