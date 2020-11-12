@@ -154,23 +154,26 @@ void draw(char *buf, int map_size, int player_id)
 	cursor_recover();
 
 	for (int i = 0; i < scores.size(); i++) {
-		char status_char = ' ';
-		if (visited.find(i) == visited.end()) {
-			status_char = 'x';
-		}
-		if (scores[i] <= 0) {
-			status_char = 'x';
+		const char *status_char;
+
+		if (player_id != i) {
+			status_char = "\033[31m";
+		} else {
+			status_char = "\033[32m";
 		}
 
-		char us_char = '=';
-		if (player_id != i) {
-			us_char = ' ';
+		if (visited.find(i) == visited.end() || scores[i] <= 0) {
+			if (player_id != i) {
+				status_char = "\033[34m";
+			} else {
+				status_char = "\033[35m";
+			}
 		}
 
 		cursor_down(1);
 
 		cursor_save();
-		printf("[%c]%cplayer %d: %d   ", status_char, us_char, i, scores[i]);
+		printf("%splayer %d: %d   \033[0m", status_char, i, scores[i]);
 		cursor_recover();
 	}
 
