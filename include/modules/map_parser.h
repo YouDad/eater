@@ -1,3 +1,5 @@
+#ifndef MAP_PARSER_H_
+#define MAP_PARSER_H_
 #include <stdint.h>
 #include <vector>
 #include "types.h"
@@ -5,7 +7,7 @@
 class server_data {
 	public:
 		// 构造函数
-		server_data(char *map, int size, int id, std::vector<int> &poses, std::vector<int> &scores);
+		server_data(char *map, int size, int id);
 		// 临时空构造函数
 		server_data();
 
@@ -31,6 +33,9 @@ class server_data {
 		// 获得自己的分数，返回值是分数
 		int get_my_score();
 
+		/* 计算炮弹下一步 */
+		void calc_ball();
+
 		/* 移动
 		 * 返回值:
 		 * - 0: 成功
@@ -44,6 +49,11 @@ class server_data {
 		 * - 1: 失败
 		 * */
 		int fire();
+	protected:
+		// 设置地图上某点的字符
+		// 越界返回1
+		// 正常返回0
+		int set(int row, int col, char ch);
 	private:
 		// 位置数组
 		std::vector<int> _positions;
@@ -60,3 +70,4 @@ class server_data {
 		// 地图字符指针
 		char *_map;
 };
+#endif

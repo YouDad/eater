@@ -4,27 +4,14 @@
 int main()
 {
 	char map[] =
+		"[MAP A@ "
 		"12345"
 		"asdwg"
 		"99999"
 		"54321"
-		"12345";
-	std::vector<int> *positions = new std::vector<int>();
-	positions->push_back(5);
-	positions->push_back(6);
-	positions->push_back(7);
-	positions->push_back(8);
-
-	std::vector<int> *scores = new std::vector<int>();
-	scores->push_back(0);
-	scores->push_back(1);
-	scores->push_back(2);
-	scores->push_back(3);
-
-	class server_data data(map, 5, 0, *positions, *scores);
-
-	delete positions;
-	delete scores;
+		"12345"
+		"][LOCATION A@ 5 6 7 8][SCORE A@ 0 1 2 3]";
+	class server_data data(map, 5, 0);
 
 	assert(data.get(0, 0) == '1');
 	assert(data.get(0, 1) == '2');
