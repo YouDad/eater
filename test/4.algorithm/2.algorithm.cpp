@@ -40,6 +40,13 @@ int main()
 		"00040"
 		"1322s"
 		"][LOCATION A@ 24][SCORE 10]" , move_op_left, false);
+	test("[MAP A@ "
+		"42242"
+		"43143"
+		"35991"
+		"19w00"
+		"32134"
+		"][LOCATION A@ 17][SCORE 10]" , move_op_down, false);
 
 	return 0;
 }
