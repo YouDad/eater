@@ -372,6 +372,20 @@ static vector<pair<mop_t, bool>> process_player(class server_data &m, int dr, in
 			dangerous_ops.push_back(make_pair(move_op_left, false));
 			dangerous_ops.push_back(make_pair(move_op_right, false));
 		}
+
+		bool facing_each_other = false;
+		if (we == 'w' && dr == -2 && player == 's') {
+			dangerous_ops.push_back(make_pair(move_op_up, true));
+		}
+		if (we == 's' && dr == 2 && player == 'w') {
+			dangerous_ops.push_back(make_pair(move_op_down, true));
+		}
+		if (we == 'a' && dc == -2 && player == 'd') {
+			dangerous_ops.push_back(make_pair(move_op_left, true));
+		}
+		if (we == 'd' && dc == 2 && player == 'a') {
+			dangerous_ops.push_back(make_pair(move_op_right, true));
+		}
 	}
 
 	// 对角线
