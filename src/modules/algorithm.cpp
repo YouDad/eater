@@ -283,7 +283,7 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 		}
 	};
 
-	auto normal_evaluate = [&](mop_t move_op) -> void {
+	auto normal_evaluate = [&](mop_t move_op, double punishment) -> void {
 		double sp;
 		class server_data cloned = m.clone();
 		int ret = cloned.move(move_op);
@@ -295,6 +295,7 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 #endif
 
 		evaluate(cloned, sp);
+		sp -= punishment;
 
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 		printf("score: %d, point: %lf\n", cloned.get_my_score() - old_score, sp);
@@ -311,6 +312,7 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 #endif
 
 		evaluate(cloned, sp);
+		sp -= punishment;
 
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 		printf("score: %d, point: %lf\n", cloned.get_my_score() - old_score, sp);
@@ -319,11 +321,11 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 		update(cloned.get_my_score() - old_score, sp, move_op, true);
 	};
 
-	normal_evaluate(move_op_up);
-	normal_evaluate(move_op_down);
-	normal_evaluate(move_op_left);
-	normal_evaluate(move_op_right);
-	normal_evaluate(move_op_stay);
+	normal_evaluate(move_op_stay, 5);
+	normal_evaluate(move_op_up, 0);
+	normal_evaluate(move_op_down, 0);
+	normal_evaluate(move_op_left, 0);
+	normal_evaluate(move_op_right, 0);
 
 	return make_pair(optimal_move_op, optimal_is_fire);
 }
