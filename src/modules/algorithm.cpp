@@ -251,7 +251,6 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 
 	mop_t optimal_move_op;
 	bool optimal_is_fire;
-	int max_score = -100;
 	// sp: situation point 局势分
 	double max_sp = -1e9;
 	auto update = [&](int score, double sp, mop_t move_op, bool is_fire) -> void {
@@ -265,15 +264,8 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 			}
 		}
 
-		if (max_score < score) {
-#ifdef ALGORITHM_DEBUG_ALGORITHM
-			printf("update!\n");
-#endif
-			max_score = score;
-			max_sp = sp;
-			optimal_move_op = move_op;
-			optimal_is_fire = is_fire;
-		} else if (max_score == score && max_sp < sp) {
+		sp += score * 1.0;
+		if (max_sp < sp) {
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 			printf("update!\n");
 #endif
@@ -321,7 +313,7 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 		update(cloned.get_my_score() - old_score, sp, move_op, true);
 	};
 
-	normal_evaluate(move_op_stay, 5);
+	normal_evaluate(move_op_stay, 0.5);
 	normal_evaluate(move_op_up, 0);
 	normal_evaluate(move_op_down, 0);
 	normal_evaluate(move_op_left, 0);
