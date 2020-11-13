@@ -161,6 +161,7 @@ int server_data::move(enum move_operating move_op)
 			set(r + dr, c + dc, direction);
 			set(r, c, '0');
 			_scores[_id] += ch - '0';
+			_positions[_id] += dr * _size + dc;
 		} else {
 			// 其他情况
 			return 1;
@@ -181,6 +182,9 @@ int server_data::fire()
 	get_my_pos(r, c);
 
 	char direction = get(r, c);
+#ifdef MAP_PARSER_DEBUG
+	printf("fire: direction = %c\n", direction);
+#endif
 	char ball;
 	// delta row, delta col
 	int dr = 0, dc = 0;
@@ -208,7 +212,7 @@ int server_data::fire()
 
 	char ch = get(r + dr, c + dc);
 #ifdef MAP_PARSER_DEBUG
-	printf("fire: '%c', %d, %d\n", ch, r+dr, c+dc);
+	printf("fire: (%d + %d, %d + %d): '%c'\n", r, dr, c, dc, ch);
 #endif
 	switch (ch) {
 		case '0': case '1':
