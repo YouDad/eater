@@ -36,8 +36,8 @@ int main()
 			}
 		}
 
-		printf("\033[1Around %d:\n\033[1A", ptr);
 		draw((char *)strings[ptr++].c_str(), map_size, 0);
+		printf("round (%d/%d)\n\033[1A", ptr, strings.size() - 1);
 		if (ptr == strings.size()) {
 			ptr--;
 		}
