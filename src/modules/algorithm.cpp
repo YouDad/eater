@@ -235,60 +235,60 @@ int evaluate(class server_data &m, double &score)
 
 std::pair<enum move_operating, bool> algorithm(class server_data &m)
 {
-	double situation_point;
-	double max_situation_point = -1e9;
-	enum move_operating move;
-	bool fire;
-	int my_score = m.get_my_score();
+	const int old_score = m.get_my_score();
+
+	enum move_operating optimal_move_op;
+	bool optimal_is_fire;
 	int max_score = 0;
-	int this_score;
-	int ret;
-
-	auto normal_evaluate = [&](enum move_operating _move) -> void {
-		class server_data cloned = m.clone();
-		ret = cloned.move(_move);
-		if (ret == 0) {
-#ifdef ALGORITHM_DEBUG_ALGORITHM
-			printf("%d, 0\n", _move);
-#endif
-			evaluate(cloned, situation_point);
-			this_score = cloned.get_my_score() - my_score;
-#ifdef ALGORITHM_DEBUG_ALGORITHM
-			printf("score: %d, point: %lf\n\n", this_score, situation_point);
-#endif
-			if (max_score < this_score) {
-				max_score = cloned.get_my_score() - my_score;
-				max_situation_point = situation_point;
-				move = _move;
-				fire = false;
-			} else if (max_score == this_score && max_situation_point < situation_point) {
-				max_situation_point = situation_point;
-				move = _move;
-				fire = false;
-			}
-
-			ret = cloned.fire();
-			if (ret == 0) {
-#ifdef ALGORITHM_DEBUG_ALGORITHM
-				printf("%d, 1\n", _move);
-#endif
-				evaluate(cloned, situation_point);
-				this_score = cloned.get_my_score() - my_score;
-#ifdef ALGORITHM_DEBUG_ALGORITHM
-				printf("score: %d, point: %lf\n\n", this_score, situation_point);
-#endif
-				if (max_score < this_score) {
-					max_score = cloned.get_my_score() - my_score;
-					max_situation_point = situation_point;
-					move = _move;
-					fire = true;
-				} else if (max_score == this_score && max_situation_point < situation_point) {
-					max_situation_point = situation_point;
-					move = _move;
-					fire = true;
-				}
-			}
+	// sp: situation point 局势分
+	double max_sp = -1e9;
+	auto update = [&](int score, double sp, enum move_operating move_op, bool is_fire) -> void {
+		if (max_score < score) {
+			max_score = score;
+			max_sp = sp;
+			optimal_move_op = move_op;
+			optimal_is_fire = is_fire;
+		} else if (max_score == score && max_sp < sp) {
+			max_sp = sp;
+			optimal_move_op = move_op;
+			optimal_is_fire = is_fire;
 		}
+	};
+
+	auto normal_evaluate = [&](enum move_operating move_op) -> void {
+		double sp;
+		class server_data cloned = m.clone();
+		int ret = cloned.move(move_op);
+		if (ret) {
+			return;
+		}
+#ifdef ALGORITHM_DEBUG_ALGORITHM
+		printf("%d, 0\n", move_op);
+#endif
+
+		evaluate(cloned, sp);
+
+#ifdef ALGORITHM_DEBUG_ALGORITHM
+		printf("score: %d, point: %lf\n\n", cloned.get_my_score() - old_score, sp);
+#endif
+
+		update(cloned.get_my_score() - old_score, sp, move_op, false);
+
+		ret = cloned.fire();
+		if (ret) {
+			return;
+		}
+#ifdef ALGORITHM_DEBUG_ALGORITHM
+		printf("%d, 1\n", move_op);
+#endif
+
+		evaluate(cloned, sp);
+
+#ifdef ALGORITHM_DEBUG_ALGORITHM
+		printf("score: %d, point: %lf\n\n", cloned.get_my_score() - old_score, sp);
+#endif
+
+		update(cloned.get_my_score() - old_score, sp, move_op, true);
 	};
 
 	normal_evaluate(move_op_up);
@@ -297,7 +297,7 @@ std::pair<enum move_operating, bool> algorithm(class server_data &m)
 	normal_evaluate(move_op_right);
 	normal_evaluate(move_op_stay);
 
-	return std::make_pair(move, fire);
+	return std::make_pair(optimal_move_op, optimal_is_fire);
 }
 
 /* 炮弹移动 > 玩家移动 > 玩家开火 > 鬼移动 */
