@@ -243,26 +243,40 @@ int evaluate(class server_data &m, double &score)
 static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_t, bool>> &dops)
 {
 	const int old_score = m.get_my_score();
+#ifdef ALGORITHM_DEBUG_ALGORITHM
+	for (int i = 0; i < dops.size(); i++) {
+		printf("dangerous: %d %d\n", dops[i].first, dops[i].second);
+	}
+#endif
 
 	mop_t optimal_move_op;
 	bool optimal_is_fire;
-	int max_score = 0;
+	int max_score = -100;
 	// sp: situation point 局势分
 	double max_sp = -1e9;
 	auto update = [&](int score, double sp, mop_t move_op, bool is_fire) -> void {
 		// skip dangerous operating
 		for (int i = 0; i < dops.size(); i++) {
 			if (dops[i].first == move_op && dops[i].second == is_fire) {
+#ifdef ALGORITHM_DEBUG_ALGORITHM
+				printf("skip!\n");
+#endif
 				return;
 			}
 		}
 
 		if (max_score < score) {
+#ifdef ALGORITHM_DEBUG_ALGORITHM
+			printf("update!\n");
+#endif
 			max_score = score;
 			max_sp = sp;
 			optimal_move_op = move_op;
 			optimal_is_fire = is_fire;
 		} else if (max_score == score && max_sp < sp) {
+#ifdef ALGORITHM_DEBUG_ALGORITHM
+			printf("update!\n");
+#endif
 			max_sp = sp;
 			optimal_move_op = move_op;
 			optimal_is_fire = is_fire;
@@ -389,9 +403,9 @@ static vector<pair<mop_t, bool>> special_algorithm(class server_data &m)
 
 	for (int dr = -2; dr <= 2; dr++) {
 		for (int dc = -2; dc <= 2; dc++) {
-			// 曼哈顿距离小于等于2
+			// 曼哈顿距离[1, 2]
 			int dist = abs(dr) + abs(dc);
-			if (dist > 2) {
+			if (dist < 1 || dist > 2) {
 				continue;
 			}
 
