@@ -167,7 +167,9 @@ int server_data::move(enum move_operating move_op)
 		}
 	} else {
 		// 如果面朝其他方向
-		set(r, c, direction);
+		if (direction != ' ') {
+			set(r, c, direction);
+		}
 	}
 
 	return 0;
