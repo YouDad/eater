@@ -77,6 +77,7 @@ static void cursor_recover()
 	printf("\033[u");
 }
 
+
 static int draw_cnt = 0;
 void draw(char *buf, int map_size, int player_id)
 {
@@ -104,6 +105,46 @@ void draw(char *buf, int map_size, int player_id)
 		}
 	}
 
+	auto draw_block = [&](int i, int j, char str[4]) -> void {
+		char ch = map[i * map_size + j];
+		switch (ch) {
+			case '0':
+				sprintf(str, "  ");
+				break;
+
+			case '9':
+				sprintf(str, "田");
+				break;
+
+			case 'w':
+			case 'a':
+			case 's':
+			case 'd':
+				use_color('o');
+				for (int k = 0; k < locations.size(); k++) {
+					if (i * map_size + j == locations[k]) {
+						visited[k] = true;
+						switch (ch) {
+							case 'w': ch = '^'; break;
+							case 'a': ch = '<'; break;
+							case 's': ch = 'v'; break;
+							case 'd': ch = '>'; break;
+						}
+						sprintf(str, "%c%d", ch, k);
+						if (player_id == k) {
+							use_color('m');
+						}
+					}
+				}
+				break;
+
+			default:
+				use_color(ch);
+				sprintf(str, "%c ", ch);
+				break;
+		}
+	};
+
 	cursor_up(map_size);
 	cursor_up(1);
 	printf("data %d:\n", draw_cnt++);
@@ -111,38 +152,9 @@ void draw(char *buf, int map_size, int player_id)
 		printf("  ");
 		for (int j = 0; j < map_size; j++) {
 			char str[4];
-			char ch = map[i * map_size + j];
 
-			switch (ch) {
-				case '0':
-					sprintf(str, "  ");
-					break;
+			draw_block(i, j, str);
 
-				case '9':
-					sprintf(str, "田");
-					break;
-
-				case 'w':
-				case 'a':
-				case 's':
-				case 'd':
-					use_color('o');
-					for (int k = 0; k < locations.size(); k++) {
-						if (i * map_size + j == locations[k]) {
-							visited[k] = true;
-							sprintf(str, "%c%d", ch, k);
-							if (player_id == k) {
-								use_color('m');
-							}
-						}
-					}
-					break;
-
-				default:
-					use_color(ch);
-					sprintf(str, "%c ", ch);
-					break;
-			}
 			printf("%s", str);
 			reset_color();
 		}
