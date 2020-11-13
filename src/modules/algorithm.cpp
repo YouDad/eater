@@ -10,6 +10,13 @@
 #include <queue>
 #include <cmath>
 #include <string.h>
+#include <vector>
+#include <algorithm>
+
+typedef enum move_operating mop_t;
+using std::vector;
+using std::pair;
+using std::make_pair;
 
 int evaluate(class server_data &m, double &score)
 {
@@ -233,16 +240,23 @@ int evaluate(class server_data &m, double &score)
 	return 0;
 }
 
-std::pair<enum move_operating, bool> algorithm(class server_data &m)
+static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_t, bool>> &dops)
 {
 	const int old_score = m.get_my_score();
 
-	enum move_operating optimal_move_op;
+	mop_t optimal_move_op;
 	bool optimal_is_fire;
 	int max_score = 0;
 	// sp: situation point 局势分
 	double max_sp = -1e9;
-	auto update = [&](int score, double sp, enum move_operating move_op, bool is_fire) -> void {
+	auto update = [&](int score, double sp, mop_t move_op, bool is_fire) -> void {
+		// skip dangerous operating
+		for (int i = 0; i < dops.size(); i++) {
+			if (dops[i].first == move_op && dops[i].second == is_fire) {
+				return;
+			}
+		}
+
 		if (max_score < score) {
 			max_score = score;
 			max_sp = sp;
@@ -255,7 +269,7 @@ std::pair<enum move_operating, bool> algorithm(class server_data &m)
 		}
 	};
 
-	auto normal_evaluate = [&](enum move_operating move_op) -> void {
+	auto normal_evaluate = [&](mop_t move_op) -> void {
 		double sp;
 		class server_data cloned = m.clone();
 		int ret = cloned.move(move_op);
@@ -297,7 +311,132 @@ std::pair<enum move_operating, bool> algorithm(class server_data &m)
 	normal_evaluate(move_op_right);
 	normal_evaluate(move_op_stay);
 
-	return std::make_pair(optimal_move_op, optimal_is_fire);
+	return make_pair(optimal_move_op, optimal_is_fire);
 }
+
+static vector<pair<mop_t, bool>> process_player(class server_data &m, int dr, int dc)
+{
+	vector<pair<mop_t, bool>> dangerous_ops;
+	int r, c;
+	m.get_my_pos(r, c);
+
+	char player = m.get(r + dr, c + dc);
+	char we = m.get(r, c);
+
+	// 相邻
+	if (abs(dr) + abs(dc) == 1) {
+		if (abs(dr)) {
+			dangerous_ops.push_back(make_pair(move_op_up, false));
+			dangerous_ops.push_back(make_pair(move_op_down, false));
+		}
+
+		if (abs(dc)) {
+			dangerous_ops.push_back(make_pair(move_op_left, false));
+			dangerous_ops.push_back(make_pair(move_op_right, false));
+		}
+	}
+
+	// 隔一格
+	if (abs(dr) == 2 || abs(dc) == 2) {
+		bool facing = false;
+		facing |= we == 'w' && dr == -2;
+		facing |= we == 's' && dr == 2;
+		facing |= we == 'a' && dc == -2;
+		facing |= we == 'd' && dc == 2;
+
+		facing |= we == 'w' && dr == 2  && player == we;
+		facing |= we == 's' && dr == -2 && player == we;
+		facing |= we == 'a' && dc == 2  && player == we;
+		facing |= we == 'd' && dc == -2 && player == we;
+
+		if (facing) {
+			dangerous_ops.push_back(make_pair(move_op_stay, false));
+			dangerous_ops.push_back(make_pair(move_op_up, false));
+			dangerous_ops.push_back(make_pair(move_op_down, false));
+			dangerous_ops.push_back(make_pair(move_op_left, false));
+			dangerous_ops.push_back(make_pair(move_op_right, false));
+		}
+	}
+
+	// 对角线
+	dangerous_ops.push_back(make_pair(dr < 0 ? move_op_up : move_op_down, false));
+	dangerous_ops.push_back(make_pair(dc < 0 ? move_op_left : move_op_right, false));
+
+	return dangerous_ops;
+}
+
+static vector<pair<mop_t, bool>> process_ghost(class server_data &m, int dr, int dc)
+{
+	vector<pair<mop_t, bool>> dangerous_ops;
+
+	if (dr != 0) {
+		dangerous_ops.push_back(make_pair(dr < 0 ? move_op_up : move_op_down, false));
+	}
+
+	if (dc != 0) {
+		dangerous_ops.push_back(make_pair(dc < 0 ? move_op_left : move_op_right, false));
+	}
+
+	return dangerous_ops;
+}
+
+static vector<pair<mop_t, bool>> special_algorithm(class server_data &m)
+{
+	vector<pair<mop_t, bool>> dangerous_ops;
+
+	int r, c;
+	m.get_my_pos(r, c);
+
+	for (int dr = -2; dr <= 2; dr++) {
+		for (int dc = -2; dc <= 2; dc++) {
+			// 曼哈顿距离小于等于2
+			int dist = abs(dr) + abs(dc);
+			if (dist > 2) {
+				continue;
+			}
+
+			// 边界检查
+			if (0 > r + dr || r + dr >= m.get_map_size()) {
+				continue;
+			}
+			if (0 > c + dc || c + dc >= m.get_map_size()) {
+				continue;
+			}
+
+			vector<pair<mop_t, bool>> ret;
+			char ch = m.get(r + dr, c + dc);
+			switch(ch) {
+				case 'w': case 'a':
+				case 's': case 'd':
+					ret = process_player(m, dr, dc);
+					for (int i = 0; i < ret.size(); i++) {
+						dangerous_ops.push_back(ret[i]);
+					}
+					break;
+
+				case 'G':
+					ret = process_ghost(m, dr, dc);
+					for (int i = 0; i < ret.size(); i++) {
+						dangerous_ops.push_back(ret[i]);
+					}
+					break;
+
+				default:
+					break;
+			}
+		}
+	}
+
+	return dangerous_ops;
+}
+
+pair<mop_t, bool> algorithm(class server_data &m)
+{
+	auto dangerous_ops = special_algorithm(m);
+	auto ret = normal_algorithm(m, dangerous_ops);
+
+	return ret;
+}
+
 
 /* 炮弹移动 > 玩家移动 > 玩家开火 > 鬼移动 */
