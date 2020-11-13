@@ -233,7 +233,7 @@ int get_server_data(char *buf)
 int send_operating(enum move_operating move_op, bool is_fire)
 {
 	char op[16];
-	char move;
+	char move = ' ';
 	char fire = is_fire ? 'v' : ' ';
 
 	switch(move_op) {
@@ -248,6 +248,9 @@ int send_operating(enum move_operating move_op, bool is_fire)
 			break;
 		case move_op_right:
 			move = 'd';
+			break;
+		case move_op_stay:
+			move = ' ';
 			break;
 	}
 

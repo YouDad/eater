@@ -295,6 +295,7 @@ std::pair<enum move_operating, bool> algorithm(class server_data &m)
 	normal_evaluate(move_op_down);
 	normal_evaluate(move_op_left);
 	normal_evaluate(move_op_right);
+	normal_evaluate(move_op_stay);
 
 	return std::make_pair(move, fire);
 }

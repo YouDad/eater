@@ -119,6 +119,9 @@ int main()
 	ret = send_operating(move_op_right, false);
 	assert(ret == 0);
 	usleep(us);
+	ret = send_operating(move_op_stay, false);
+	assert(ret == 0);
+	usleep(us);
 
 	ret = send_operating(move_op_up, true);
 	assert(ret == 0);
@@ -130,6 +133,9 @@ int main()
 	assert(ret == 0);
 	usleep(us);
 	ret = send_operating(move_op_right, true);
+	assert(ret == 0);
+	usleep(us);
+	ret = send_operating(move_op_stay, true);
 	assert(ret == 0);
 	usleep(us);
 
