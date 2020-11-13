@@ -108,6 +108,7 @@ void draw(char *buf, int map_size, int player_id)
 		}
 	}
 
+	printf("\033[2J");
 	auto draw_block = [&](int i, int j, char str[4]) -> void {
 		char ch = map[i * map_size + j];
 		switch (ch) {
@@ -183,16 +184,16 @@ void draw(char *buf, int map_size, int player_id)
 		if (visited.find(i) == visited.end() || scores[i] <= 0) {
 			// death
 			if (player_id != i) {
-				status_char = "\033[38;2;191;0;0m";
+				status_char = "\033[38;2;255;0;0m\033[48;2;0;0;0m";
 			} else {
-				status_char = "\033[38;2;0;191;0m";
+				status_char = "\033[38;2;0;255;0m\033[48;2;0;0;0m";
 			}
 		} else {
 			// survive
 			if (player_id != i) {
-				status_char = "\033[38;2;255;0;0m";
+				status_char = "\033[38;2;255;0;0m\033[48;2;127;127;127m";
 			} else {
-				status_char = "\033[38;2;0;255;0m";
+				status_char = "\033[38;2;0;255;0m\033[48;2;127;127;127m";
 			}
 		}
 
