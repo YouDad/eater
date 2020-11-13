@@ -77,6 +77,7 @@ static void cursor_recover()
 	printf("\033[u");
 }
 
+static int draw_cnt = 0;
 void draw(char *buf, int map_size, int player_id)
 {
 	char *map = new char[map_size * map_size + 1];
@@ -104,6 +105,8 @@ void draw(char *buf, int map_size, int player_id)
 	}
 
 	cursor_up(map_size);
+	cursor_up(1);
+	printf("data %d:\n", draw_cnt++);
 	for (int i = 0; i < map_size; i++) {
 		printf("  ");
 		for (int j = 0; j < map_size; j++) {
