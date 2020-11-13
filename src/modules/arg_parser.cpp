@@ -8,6 +8,7 @@ uint32_t port_number;
 bool have_port = false;
 bool have_ip = false;
 bool have_key = false;
+bool have_record = false;
 
 int arg_parse(int argc, const char **argv)
 {
@@ -35,6 +36,10 @@ int arg_parse(int argc, const char **argv)
 					have_key = true;
 				}
 			}
+		}
+
+		if (strcmp(argv[i], "--record") == 0) {
+			have_record = true;
 		}
 	}
 
@@ -90,4 +95,9 @@ int get_key(char *k)
 		return 0;
 	}
 	return 1;
+}
+
+bool is_recording()
+{
+	return have_record;
 }

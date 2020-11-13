@@ -39,3 +39,6 @@ int get_port(uint32_t &port);
  * - 1: 失败
  * */
 int get_key(char *k);
+
+/* 从命令行中获得是否记录 */
+bool is_recording();

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "modules/arg_parser.h"
 #include "modules/network.h"
@@ -33,8 +34,7 @@ int main(int argc, const char **argv)
 	char key[40];
 	ret = get_key(key);
 	if (ret) {
-		perror("get_key");
-		return 1;
+		strcpy(key, "c96f4d7661c94cbb9706469649a7cbbc");
 	}
 
 	ret = connect(addr, port, key);
@@ -67,10 +67,21 @@ int main(int argc, const char **argv)
 		printf("\n");
 	}
 
+	if (is_recording()) {
+		auto fp = fopen(".record", "w");
+		fclose(fp);
+	}
+
 	while (true) {
 		ret = get_server_data(buf);
 		if (ret == 2) {
 			break;
+		}
+
+		if (is_recording()) {
+			auto fp = fopen(".record", "a");
+			fprintf(fp, "%s\n", buf);
+			fclose(fp);
 		}
 
 		draw(buf, map_line_size, player_id);
