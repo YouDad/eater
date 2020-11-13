@@ -291,13 +291,13 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 			return;
 		}
 #ifdef ALGORITHM_DEBUG_ALGORITHM
-		printf("%d, 0\n", move_op);
+		printf("\n%d, 0\n", move_op);
 #endif
 
 		evaluate(cloned, sp);
 
 #ifdef ALGORITHM_DEBUG_ALGORITHM
-		printf("score: %d, point: %lf\n\n", cloned.get_my_score() - old_score, sp);
+		printf("score: %d, point: %lf\n", cloned.get_my_score() - old_score, sp);
 #endif
 
 		update(cloned.get_my_score() - old_score, sp, move_op, false);
@@ -307,13 +307,13 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 			return;
 		}
 #ifdef ALGORITHM_DEBUG_ALGORITHM
-		printf("%d, 1\n", move_op);
+		printf("\n%d, 1\n", move_op);
 #endif
 
 		evaluate(cloned, sp);
 
 #ifdef ALGORITHM_DEBUG_ALGORITHM
-		printf("score: %d, point: %lf\n\n", cloned.get_my_score() - old_score, sp);
+		printf("score: %d, point: %lf\n", cloned.get_my_score() - old_score, sp);
 #endif
 
 		update(cloned.get_my_score() - old_score, sp, move_op, true);
