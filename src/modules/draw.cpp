@@ -9,27 +9,30 @@ struct colorscheme {
 	char match_char;
 	int fg;
 	int bg;
+	const char *special_output;
 };
 
 struct colorscheme colorschemes[] = {
-	{ '9', 0xffffff, 0xffffff, },
-	{ '1', 0x0000aa, 0x0000aa, },
-	{ '2', 0x2a00aa, 0x2a00aa, },
-	{ '3', 0x5500aa, 0x5500aa, },
-	{ '4', 0x9000aa, 0x9000aa, },
-	{ '5', 0xaa00aa, 0xaa00aa, },
-	{ 'o', 0x0000ff, 0xffff00, },
-	{ 'm', 0xff00ff, 0x00ff00, },
-	{ '^', 0xffffff, 0xff0000, },
-	{ '<', 0xffffff, 0xff0000, },
-	{ 'v', 0xffffff, 0xff0000, },
-	{ '>', 0xffffff, 0xff0000, },
-	{ 'G', 0x000000, 0xff0000, },
+	{ '0', 0x000000, 0x000000, "", },
+	{ '9', 0xffffff, 0x000000, "口", },
+	{ '1', 0x880000, 0x880000, "", },
+	{ '2', 0x884400, 0x884400, "", },
+	{ '3', 0x888800, 0x888800, "", },
+	{ '4', 0x448800, 0x448800, "", },
+	{ '5', 0x008800, 0x008800, "", },
+	{ 'o', 0x0000ff, 0xffff00, "", },
+	{ 'm', 0xff00ff, 0x00ff00, "", },
+	{ '^', 0xffffff, 0xff0000, "▲ ", },
+	{ '<', 0xffffff, 0xff0000, "◀ ", },
+	{ 'v', 0xffffff, 0xff0000, "▼ ", },
+	{ '>', 0xffffff, 0xff0000, "▶ ", },
+	{ 'G', 0x000000, 0xff0000, "☣ ", },
 };
+const int colorschemes_size = sizeof(colorschemes) / sizeof(*colorschemes);
 
 static void use_color(char c)
 {
-	for (int i = 0; i < sizeof(colorschemes) / sizeof(*colorschemes); i++) {
+	for (int i = 0; i < colorschemes_size; i++) {
 		if (colorschemes[i].match_char == c) {
 			int fg = colorschemes[i].fg;
 			int bg = colorschemes[i].bg;
@@ -108,14 +111,6 @@ void draw(char *buf, int map_size, int player_id)
 	auto draw_block = [&](int i, int j, char str[4]) -> void {
 		char ch = map[i * map_size + j];
 		switch (ch) {
-			case '0':
-				sprintf(str, "  ");
-				break;
-
-			case '9':
-				sprintf(str, "田");
-				break;
-
 			case 'w':
 			case 'a':
 			case 's':
@@ -138,16 +133,30 @@ void draw(char *buf, int map_size, int player_id)
 				}
 				break;
 
-			default:
+			default: {
 				use_color(ch);
-				sprintf(str, "%c ", ch);
+				bool have = false;
+				for (int i = 0; i < colorschemes_size; i++) {
+					if (colorschemes[i].match_char == ch) {
+						if (colorschemes[i].special_output[0] != 0) {
+							sprintf(str, "%s", colorschemes[i].special_output);
+							have = true;
+						}
+					}
+				}
+
+				if (!have) {
+					sprintf(str, "%c ", ch);
+				}
+
 				break;
+			}
 		}
 	};
 
 	cursor_up(map_size);
 	cursor_up(1);
-	printf("data %d:\n", draw_cnt++);
+	printf("round %d:\n", draw_cnt++);
 	for (int i = 0; i < map_size; i++) {
 		printf("  ");
 		for (int j = 0; j < map_size; j++) {
@@ -171,17 +180,19 @@ void draw(char *buf, int map_size, int player_id)
 	for (int i = 0; i < scores.size(); i++) {
 		const char *status_char;
 
-		if (player_id != i) {
-			status_char = "\033[31m";
-		} else {
-			status_char = "\033[32m";
-		}
-
 		if (visited.find(i) == visited.end() || scores[i] <= 0) {
+			// death
 			if (player_id != i) {
-				status_char = "\033[34m";
+				status_char = "\033[38;2;191;0;0m";
 			} else {
-				status_char = "\033[35m";
+				status_char = "\033[38;2;0;191;0m";
+			}
+		} else {
+			// survive
+			if (player_id != i) {
+				status_char = "\033[38;2;255;0;0m";
+			} else {
+				status_char = "\033[38;2;0;255;0m";
 			}
 		}
 

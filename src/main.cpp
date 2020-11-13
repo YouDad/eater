@@ -62,7 +62,7 @@ int main(int argc, const char **argv)
 	}
 
 	int player_id = get_player_id();
-	printf("data:\n");
+	printf("round:\n");
 	for (int i = 0; i < map_line_size; i++) {
 		printf("\n");
 	}
