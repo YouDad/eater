@@ -126,6 +126,8 @@ int start_read_thread()
 			}
 
 			if (strstr(buf, "[START") == buf) {
+				heartbeat_thread_over = true;
+
 				ret = sscanf(buf, "[START %d %d]", &player_id, &map_size);
 				if (ret != 2) {
 					printf("start recv: %s\n", buf);
@@ -180,11 +182,11 @@ int start_heartbeat_thread()
 	heartbeat_thread_over = false;
 	heartbeat_thread_p = new std::thread([&]() -> void {
 		while (!heartbeat_thread_over) {
-			// int ret = my_send("H");
-			// if (ret < 0) {
-			//     perror("send");
-			//     return;
-			// }
+			int ret = my_send("H");
+			if (ret < 0) {
+				perror("send");
+				return;
+			}
 
 			sleep(5);
 		}
