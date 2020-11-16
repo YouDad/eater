@@ -25,20 +25,7 @@ int start_read_thread();
  * */
 int finish_read_thread();
 
-/* 开启心跳线程
- * 返回值：
- * - 0: 成功
- * - 1: 失败
- * */
-int start_heartbeat_thread();
-
-/* 关闭心跳线程
- * 返回值：
- * - 0: 成功
- * - 1: 失败
- * */
-int finish_heartbeat_thread();
-
+int wait_for_start();
 
 /* 与服务器断开连接
  * 返回值:

@@ -16,10 +16,8 @@ static int socket_fd;
 
 static std::thread *read_thread_p;
 static std::thread *heartbeat_thread_p;
-static std::atomic<bool> read_thread_over;
-static std::atomic<bool> heartbeat_thread_over;
+static volatile std::atomic<bool> read_thread_over;
 static std::mutex data_mutex;
-static std::mutex map_size_mutex;
 
 static int map_size;
 static int player_id;
@@ -31,7 +29,7 @@ static bool game_over;
 int my_send(const char *str)
 {
 #ifdef NETWORK_DEBUG
-	printf("send: \"%s\"\n", str);
+	printf("send[%d]: \"%s\"\n", socket_fd, str);
 #endif
 	static char buf[32];
 	sprintf(buf, "(%s)", str);
@@ -102,7 +100,7 @@ int start_read_thread()
 	read_thread_over = false;
 	game_over = false;
 	read_thread_p = new std::thread([&]() -> void {
-		static int buf_size = 16;
+		static int buf_size = map_size * map_size + 100;
 		static char *buf = new char[buf_size];
 
 		while (!read_thread_over) {
@@ -129,23 +127,6 @@ int start_read_thread()
 				continue;
 			}
 
-			if (strstr(buf, "[START") == buf) {
-				heartbeat_thread_over = true;
-
-				ret = sscanf(buf, "[START %d %d]", &player_id, &map_size);
-				if (ret != 2) {
-					printf("start recv: %s\n", buf);
-					break;
-				}
-				map_size_mutex.unlock();
-
-				delete []buf;
-				buf_size = map_size * map_size + 100;
-				buf = new char[buf_size];
-				map = new char[buf_size];
-				my_send("READY");
-			}
-
 			if (strstr(buf, "[MAP") == buf) {
 				strcpy(map, buf);
 				sscanf(map, "[MAP %s", token);
@@ -154,14 +135,13 @@ int start_read_thread()
 			}
 
 			if (strstr(buf, "[ROUNDOVER") == buf) {
-				game_over = true;
-				read_thread_over = true;
 				data_mutex.unlock();
 				continue;
 			}
 
 			if (strstr(buf, "[GAMEOVER") == buf) {
 				game_over = true;
+				read_thread_over = true;
 				data_mutex.unlock();
 				continue;
 			}
@@ -181,28 +161,32 @@ int finish_read_thread()
 	return 0;
 }
 
-int start_heartbeat_thread()
+int wait_for_start()
 {
-	heartbeat_thread_over = false;
-	heartbeat_thread_p = new std::thread([&]() -> void {
-		while (!heartbeat_thread_over) {
-			int ret = my_send("H");
-			if (ret < 0) {
-				perror("send");
-				return;
-			}
-
-			sleep(5);
+	char buf[16];
+	while (true) {
+		int ret = my_send("H");
+		if (ret < 0) {
+			perror("send");
+			return 1;
 		}
-	});
-	return 0;
-}
 
-int finish_heartbeat_thread()
-{
-	heartbeat_thread_over = true;
-	heartbeat_thread_p->join();
-	delete heartbeat_thread_p;
+		sleep(1);
+
+		ret = recv(socket_fd, buf, sizeof(buf), 0);
+
+		if (strstr(buf, "[START") != buf) {
+			continue;
+		}
+
+		ret = sscanf(buf, "[START %d %d]", &player_id, &map_size);
+		if (ret != 2) {
+			printf("start recv: %s\n", buf);
+		}
+
+		map = new char[map_size * map_size + 100];
+		my_send("READY");
+	}
 	return 0;
 }
 
@@ -214,10 +198,6 @@ int disconnect()
 
 int get_map_size()
 {
-	if (map_size == 0) {
-		map_size_mutex.try_lock();
-		map_size_mutex.lock();
-	}
 	return map_size;
 }
 

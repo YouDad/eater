@@ -43,15 +43,15 @@ int main(int argc, const char **argv)
 		return 1;
 	}
 
-	ret = start_read_thread();
+	ret = wait_for_start();
 	if (ret) {
-		perror("start_read_thread");
+		perror("wait_for_start");
 		return 1;
 	}
 
-	ret = start_heartbeat_thread();
+	ret = start_read_thread();
 	if (ret) {
-		perror("start_heartbeat_thread");
+		perror("start_read_thread");
 		return 1;
 	}
 
@@ -97,7 +97,6 @@ int main(int argc, const char **argv)
 	}
 
 	delete []buf;
-	finish_heartbeat_thread();
 	finish_read_thread();
 	disconnect();
 	return 0;
