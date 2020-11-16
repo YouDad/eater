@@ -1,4 +1,4 @@
-// #define NETWORK_DEBUG
+#define NETWORK_DEBUG
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -82,6 +82,10 @@ int connect(uint32_t ip_addr, uint32_t port, const char *key)
 		perror("recv");
 		return 1;
 	}
+	buf[ret] = 0;
+#ifdef NETWORK_DEBUG
+	printf("recv [%d]: \"%s\"\n", ret, buf);
+#endif
 
 	if (strstr(buf, "[OK]") != buf) {
 		perror("strstr");
@@ -110,7 +114,7 @@ int start_read_thread()
 
 			buf[ret] = 0;
 #ifdef NETWORK_DEBUG
-			printf("recv[%d/%d]: %s\n", ret, buf_size, buf);
+			printf("recv[%d/%d]: \"%s\"\n", ret, buf_size, buf);
 #endif
 
 			if (ret == 0) {

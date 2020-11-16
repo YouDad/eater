@@ -108,7 +108,7 @@ void draw(char *buf, int map_size, int player_id)
 		}
 	}
 
-	printf("\033[2J");
+	// printf("\033[2J");
 	auto draw_block = [&](int i, int j, char str[4]) -> void {
 		char ch = map[i * map_size + j];
 		switch (ch) {

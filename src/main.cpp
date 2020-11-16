@@ -71,6 +71,7 @@ int main(int argc, const char **argv)
 		auto fp = fopen(".record", "w");
 		fclose(fp);
 	}
+	printf("\033[2J");
 
 	while (true) {
 		ret = get_server_data(buf);
