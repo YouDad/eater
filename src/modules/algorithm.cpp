@@ -219,7 +219,11 @@ int evaluate(class server_data &m, double &score)
 	printf("char_graph:\n");
 	for (int i = 0; i < line_size; i++) {
 		for (int j = 0; j < line_size; j++) {
-			printf("%c ", m.get(i, j));
+			if (i == origin_row && j == origin_col) {
+				printf("\033[31m%c \033[0m", m.get(i, j));
+			} else {
+				printf("%c ", m.get(i, j));
+			}
 		}
 		printf("\n");
 	}
