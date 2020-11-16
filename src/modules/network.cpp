@@ -20,6 +20,7 @@ static volatile std::atomic<bool> read_thread_over;
 static std::mutex data_mutex;
 
 static int map_size;
+static int map_buf_size;
 static int player_id;
 
 static char token[4];
@@ -71,7 +72,7 @@ int connect(uint32_t ip_addr, uint32_t port, const char *key)
 	serv_addr.sin_port = htons(port);
 
 	char addr[32];
-	sprintf(addr, "%u.%u.%u.%u",
+	snprintf(addr, sizeof(addr), "%u.%u.%u.%u",
 			(ip_addr >> 24) & 0xff, (ip_addr >> 16) & 0xff,
 			(ip_addr >> 8) & 0xff, (ip_addr >> 0) & 0xff);
 
@@ -117,11 +118,10 @@ int start_read_thread()
 	read_thread_over = false;
 	game_over = false;
 	read_thread_p = new std::thread([&]() -> void {
-		int buf_size = map_size * map_size + 100;
-		char *buf = new char[buf_size];
+		char *buf = new char[map_buf_size];
 
 		while (!read_thread_over) {
-			int ret = my_recv(buf, buf_size);
+			int ret = my_recv(buf, map_buf_size);
 			if (ret <= 0) {
 				perror("my_recv");
 				return;
@@ -136,7 +136,7 @@ int start_read_thread()
 			}
 
 			if (strstr(buf, "[MAP") != NULL) {
-				strncpy(map, buf, buf_size);
+				strncpy(map, buf, map_buf_size);
 
 				char *map_str = strstr(buf, "[MAP");
 				sscanf(map_str, "[MAP %s", token);
@@ -195,12 +195,13 @@ int wait_for_start()
 
 		char *start_buf = strstr(buf, "[START");
 		ret = sscanf(start_buf, "[START %d %d]", &player_id, &map_size);
+		map_buf_size = map_size * map_size + 100;
 		if (ret != 2) {
 			printf("start recv: %s\n", buf);
 			return 1;
 		}
 
-		map = new char[map_size * map_size + 100];
+		map = new char[map_buf_size];
 		ret = my_send("READY");
 		if (ret < 0) {
 			perror("my_send");
@@ -233,7 +234,7 @@ int get_server_data(char *buf)
 	if (game_over) {
 		return 2;
 	}
-	strcpy(buf, map);
+	strncpy(buf, map, map_buf_size);
 	return 0;
 }
 
@@ -261,7 +262,7 @@ int send_operating(enum move_operating move_op, bool is_fire)
 			break;
 	}
 
-	sprintf(op, "%s%c%c", token, move, fire);
+	snprintf(op, sizeof(op), "%s%c%c", token, move, fire);
 	int ret = my_send(op);
 	if (ret < 0) {
 		perror("my_send");
