@@ -1,4 +1,4 @@
-#define NETWORK_DEBUG
+// #define NETWORK_DEBUG
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -187,7 +187,7 @@ int wait_for_start()
 			return 1;
 		}
 
-		if (strstr(buf, "[START") != NULL) {
+		if (strstr(buf, "[START") == NULL) {
 			continue;
 		}
 
