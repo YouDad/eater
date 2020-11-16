@@ -25,6 +25,11 @@ int start_read_thread();
  * */
 int finish_read_thread();
 
+/* 发心跳等待游戏开始
+ * 返回值:
+ * - 0: 成功
+ *   1: 失败
+ * */
 int wait_for_start();
 
 /* 与服务器断开连接

@@ -26,14 +26,35 @@ static char token[4];
 static char *map;
 static bool game_over;
 
+int my_recv(char *buf, int buf_size)
+{
+	int ret = recv(socket_fd, buf, buf_size, 0);
+
+	if (ret > 0) {
+		buf[ret] = 0;
+
+#ifdef NETWORK_DEBUG
+		printf("recv[%d/%d]: \"%s\"\n", ret, buf_size, buf);
+#endif
+	}
+
+	return ret;
+}
+
 int my_send(const char *str)
 {
 #ifdef NETWORK_DEBUG
 	printf("send[%d]: \"%s\"\n", socket_fd, str);
 #endif
-	static char buf[64];
-	sprintf(buf, "(%s)", str);
-	return send(socket_fd, buf, strlen(buf), 0);
+	// 3是括号和\0
+	int buf_size = strlen(str) + 3;
+	char *buf = new char[buf_size];
+	snprintf(buf, buf_size, "(%s)", str);
+
+	int ret = send(socket_fd, buf, strlen(buf), 0);
+	delete []buf;
+
+	return ret;
 }
 
 int connect(uint32_t ip_addr, uint32_t port, const char *key)
@@ -70,20 +91,16 @@ int connect(uint32_t ip_addr, uint32_t port, const char *key)
 
 	ret = my_send(key);
 	if (ret < 0) {
-		perror("send");
+		perror("my_send");
 		return 1;
 	}
 
 	char buf[16];
-	ret = recv(socket_fd, buf, sizeof(buf), 0);
-	if (ret < 0) {
-		perror("recv");
+	ret = my_recv(buf, sizeof(buf));
+	if (ret <= 0) {
+		perror("my_recv");
 		return 1;
 	}
-	buf[ret] = 0;
-#ifdef NETWORK_DEBUG
-	printf("recv [%d]: \"%s\"\n", ret, buf);
-#endif
 
 	if (strstr(buf, "[OK]") == NULL) {
 		perror("strstr");
@@ -100,22 +117,13 @@ int start_read_thread()
 	read_thread_over = false;
 	game_over = false;
 	read_thread_p = new std::thread([&]() -> void {
-		static int buf_size = map_size * map_size + 100;
-		static char *buf = new char[buf_size];
+		int buf_size = map_size * map_size + 100;
+		char *buf = new char[buf_size];
 
 		while (!read_thread_over) {
-			int ret = recv(socket_fd, buf, buf_size, 0);
-			if (ret < 0) {
-				perror("recv");
-				break;
-			}
-
-			buf[ret] = 0;
-#ifdef NETWORK_DEBUG
-			printf("recv[%d/%d]: \"%s\"\n", ret, buf_size, buf);
-#endif
-
-			if (ret == 0) {
+			int ret = my_recv(buf, buf_size);
+			if (ret <= 0) {
+				perror("my_recv");
 				return;
 			}
 
@@ -129,13 +137,15 @@ int start_read_thread()
 
 			if (strstr(buf, "[MAP") != NULL) {
 				strncpy(map, buf, buf_size);
-				sscanf(strstr(buf, "[MAP"), "[MAP %s", token);
+
+				char *map_str = strstr(buf, "[MAP");
+				sscanf(map_str, "[MAP %s", token);
+
 				data_mutex.unlock();
 				continue;
 			}
 
 			if (strstr(buf, "[ROUNDOVER") != NULL) {
-				// data_mutex.unlock();
 				continue;
 			}
 
@@ -167,23 +177,15 @@ int wait_for_start()
 	while (true) {
 		int ret = my_send("H");
 		if (ret < 0) {
-			perror("send");
+			perror("my_send");
 			return 1;
 		}
 
 		sleep(1);
 
-		ret = recv(socket_fd, buf, sizeof(buf), 0);
-		if (ret < 0) {
-			perror("recv");
-			return 1;
-		}
-
-		buf[ret] = 0;
-#ifdef NETWORK_DEBUG
-		printf("recv[%d/%d]: \"%s\"\n", ret, sizeof(buf), buf);
-#endif
-		if (ret == 0) {
+		ret = my_recv(buf, sizeof(buf));
+		if (ret <= 0) {
+			perror("my_recv");
 			return 1;
 		}
 
@@ -199,7 +201,11 @@ int wait_for_start()
 		}
 
 		map = new char[map_size * map_size + 100];
-		my_send("READY");
+		ret = my_send("READY");
+		if (ret < 0) {
+			perror("my_send");
+			return 1;
+		}
 		break;
 	}
 	return 0;
@@ -256,7 +262,11 @@ int send_operating(enum move_operating move_op, bool is_fire)
 	}
 
 	sprintf(op, "%s%c%c", token, move, fire);
-	my_send(op);
+	int ret = my_send(op);
+	if (ret < 0) {
+		perror("my_send");
+		return 1;
+	}
 #ifdef NETWORK_DEBUG
 	printf("send_operating: %s\n", op);
 #endif
