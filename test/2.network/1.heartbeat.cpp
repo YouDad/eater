@@ -80,12 +80,7 @@ int main()
 	ret = connect(0x7f000001, 9000, "c96f4d7661c94cbb9706469649a7cbbc");
 	assert(ret == 0);
 
-	ret = start_heartbeat_thread();
-	assert(ret == 0);
-
-	sleep(3);
-
-	ret = finish_heartbeat_thread();
+	ret = wait_for_start();
 	assert(ret == 0);
 
 	ret = disconnect();
