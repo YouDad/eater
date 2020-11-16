@@ -31,7 +31,7 @@ int my_send(const char *str)
 #ifdef NETWORK_DEBUG
 	printf("send[%d]: \"%s\"\n", socket_fd, str);
 #endif
-	static char buf[32];
+	static char buf[64];
 	sprintf(buf, "(%s)", str);
 	return send(socket_fd, buf, strlen(buf), 0);
 }
@@ -85,7 +85,7 @@ int connect(uint32_t ip_addr, uint32_t port, const char *key)
 	printf("recv [%d]: \"%s\"\n", ret, buf);
 #endif
 
-	if (strstr(buf, "[OK]") != buf) {
+	if (strstr(buf, "[OK]") == NULL) {
 		perror("strstr");
 		printf("recv string[%d]: \"%s\"\n", ret, buf);
 		return 1;
@@ -119,27 +119,27 @@ int start_read_thread()
 				return;
 			}
 
-			if (strstr(buf, "[ERROR") == buf) {
+			if (strstr(buf, "[ERROR") != NULL) {
 				continue;
 			}
 
-			if (strstr(buf, "[OK") == buf) {
+			if (strstr(buf, "[OK") != NULL) {
 				continue;
 			}
 
-			if (strstr(buf, "[MAP") == buf) {
-				strcpy(map, buf);
-				sscanf(map, "[MAP %s", token);
+			if (strstr(buf, "[MAP") != NULL) {
+				strncpy(map, buf, buf_size);
+				sscanf(strstr(buf, "[MAP"), "[MAP %s", token);
 				data_mutex.unlock();
 				continue;
 			}
 
-			if (strstr(buf, "[ROUNDOVER") == buf) {
-				data_mutex.unlock();
+			if (strstr(buf, "[ROUNDOVER") != NULL) {
+				// data_mutex.unlock();
 				continue;
 			}
 
-			if (strstr(buf, "[GAMEOVER") == buf) {
+			if (strstr(buf, "[GAMEOVER") != NULL) {
 				game_over = true;
 				read_thread_over = true;
 				data_mutex.unlock();
@@ -174,18 +174,33 @@ int wait_for_start()
 		sleep(1);
 
 		ret = recv(socket_fd, buf, sizeof(buf), 0);
+		if (ret < 0) {
+			perror("recv");
+			return 1;
+		}
 
-		if (strstr(buf, "[START") != buf) {
+		buf[ret] = 0;
+#ifdef NETWORK_DEBUG
+		printf("recv[%d/%d]: \"%s\"\n", ret, sizeof(buf), buf);
+#endif
+		if (ret == 0) {
+			return 1;
+		}
+
+		if (strstr(buf, "[START") != NULL) {
 			continue;
 		}
 
-		ret = sscanf(buf, "[START %d %d]", &player_id, &map_size);
+		char *start_buf = strstr(buf, "[START");
+		ret = sscanf(start_buf, "[START %d %d]", &player_id, &map_size);
 		if (ret != 2) {
 			printf("start recv: %s\n", buf);
+			return 1;
 		}
 
 		map = new char[map_size * map_size + 100];
 		my_send("READY");
+		break;
 	}
 	return 0;
 }
