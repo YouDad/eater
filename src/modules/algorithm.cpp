@@ -146,7 +146,7 @@ int evaluate(class server_data &m, double &score)
 			char ch = m.get(i, j);
 			switch (ch) {
 				case '1': case '2': case '3': case '4': case '5':
-					add_move_val(i, j, (ch - '0') * 1.0 / get_dist(i, j));
+					add_move_val(i, j, (ch - '0') * 1.0 / (get_dist(i, j) + 1));
 					break;
 
 				case 'w': case 'a': case 's': case 'd':
@@ -196,6 +196,8 @@ int evaluate(class server_data &m, double &score)
 						for (int dj = j - 3; dj <= j + 3; dj++) {
 							int dist = get_manhattan_dist(i, j, di, dj);
 							if (dist <= 3 && dist > 0) {
+								char ch = m.get(di, dj);
+								add_move_val(di, dj, (ch - '0') * -1.0 / (get_dist(i, j) + 1));
 								add_move_val(di, dj, -25.0 / dist);
 							}
 						}
