@@ -104,7 +104,7 @@ void draw(char *buf, int map_size, int player_id) {
 	}
 
 	// printf("\033[2J");
-	auto draw_block = [&](int i, int j, char str[4]) -> void {
+	auto draw_block = [&](int i, int j, char *str, int str_len) -> void {
 		char ch = map[i * map_size + j];
 		switch (ch) {
 			case 'w':
@@ -121,7 +121,7 @@ void draw(char *buf, int map_size, int player_id) {
 							case 's': ch = 'v'; break;
 							case 'd': ch = '>'; break;
 						}
-						sprintf(str, "%c%d", ch, k);
+						snprintf(str, str_len, "%c%d", ch, k);
 						if (player_id == k) {
 							use_color('m');
 						}
@@ -135,14 +135,14 @@ void draw(char *buf, int map_size, int player_id) {
 				for (int i = 0; i < colorschemes_size; i++) {
 					if (colorschemes[i].match_char == ch) {
 						if (colorschemes[i].special_output[0] != 0) {
-							sprintf(str, "%s", colorschemes[i].special_output);
+							snprintf(str, str_len, "%s", colorschemes[i].special_output);
 							have = true;
 						}
 					}
 				}
 
 				if (!have) {
-					sprintf(str, "%c ", ch);
+					snprintf(str, str_len, "%c ", ch);
 				}
 
 				break;
@@ -156,9 +156,9 @@ void draw(char *buf, int map_size, int player_id) {
 	for (int i = 0; i < map_size; i++) {
 		printf("  ");
 		for (int j = 0; j < map_size; j++) {
-			char str[4];
+			char str[8];
 
-			draw_block(i, j, str);
+			draw_block(i, j, str, sizeof(str));
 
 			printf("%s", str);
 			reset_color();

@@ -17,7 +17,7 @@ int arg_parse(int argc, const char **argv) {
 		if (strcmp(argv[i], "--ip") == 0 && i + 1 < argc) {
 			if (strlen(argv[i + 1]) <= 16) {
 				have_ip = true;
-				strcpy(ip, argv[i + 1]);
+				strncpy(ip, argv[i + 1], sizeof(ip));
 			}
 		}
 
@@ -87,9 +87,9 @@ int get_port(uint32_t &port) {
 	return 1;
 }
 
-int get_key(char *k) {
+int get_key(char *k, int k_len) {
 	if (have_key) {
-		strcpy(k, key);
+		strncpy(k, key, k_len);
 		return 0;
 	}
 	return 1;

@@ -32,9 +32,9 @@ int main(int argc, const char **argv) {
 	}
 
 	char key[40];
-	ret = get_key(key);
+	ret = get_key(key, sizeof(key));
 	if (ret) {
-		strcpy(key, "c96f4d7661c94cbb9706469649a7cbbc");
+		strncpy(key, "c96f4d7661c94cbb9706469649a7cbbc", sizeof(key));
 	}
 
 	ret = connect(addr, port, key);
