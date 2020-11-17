@@ -142,13 +142,20 @@ int evaluate(class server_data &m, double &score)
 	auto get_manhattan_dist = [](int i, int j, int r, int c) -> int {
 		return abs(i - r) + abs(j - c);
 	};
+	auto get_fruit_val = [&](int i, int j) -> double {
+		char ch = m.get(i, j);
+		if ('1' <= ch && ch <= '5') {
+			return (ch - '0') / (get_dist(i, j) + 0.45);
+		}
+		return 0;
+	};
 
 	for (int i = 0; i < line_size; i++) {
 		for (int j = 0; j < line_size; j++) {
 			char ch = m.get(i, j);
 			switch (ch) {
 				case '1': case '2': case '3': case '4': case '5':
-					add_move_val(i, j, (ch - '0') * 1.0 / (get_dist(i, j) + 0.45));
+					add_move_val(i, j, get_fruit_val(i, j));
 					break;
 
 				case 'w': case 'a': case 's': case 'd':
@@ -156,9 +163,7 @@ int evaluate(class server_data &m, double &score)
 						for (int di = i - 2; di <= i + 2; di++) {
 							for (int dj = j - 2; dj <= j + 2; dj++) {
 								add_move_val(di, dj, -move_val[get_pos(di, dj)]);
-
-								char ch = m.get(di, dj);
-								add_move_val(di, dj, (ch - '0') * -1.0 / (get_dist(i, j) + 0.45));
+								add_move_val(di, dj, -get_fruit_val(di, dj));
 							}
 						}
 					}
@@ -201,8 +206,7 @@ int evaluate(class server_data &m, double &score)
 						for (int dj = j - 3; dj <= j + 3; dj++) {
 							int dist = get_manhattan_dist(i, j, di, dj);
 							if (0 < dist && dist <= 3) {
-								char ch = m.get(di, dj);
-								add_move_val(di, dj, (ch - '0') * -1.0 / (get_dist(i, j) + 0.45));
+								add_move_val(di, dj, -get_fruit_val(di, dj));
 							}
 						}
 					}
