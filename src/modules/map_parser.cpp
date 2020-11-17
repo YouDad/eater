@@ -1,8 +1,11 @@
-// #define MAP_PARSER_DEBUG
-#include "modules/map_parser.h"
+// Copyright 2020 <luwh0708@thundersoft.com>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "modules/map_parser.h"
+
+// #define MAP_PARSER_DEBUG
 
 server_data::server_data() {
 }

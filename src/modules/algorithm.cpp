@@ -1,3 +1,14 @@
+// Copyright 2020 <luwh0708@thundersoft.com>
+#include <stdio.h>
+#include <string.h>
+
+#include <queue>
+#include <cmath>
+#include <vector>
+#include <algorithm>
+
+#include "modules/algorithm.h"
+
 // #define ALGORITHM_DEBUG_MEMSET
 // #define ALGORITHM_DEBUG_DIST
 // #define ALGORITHM_DEBUG_DIST_GRAPH
@@ -5,13 +16,6 @@
 // #define ALGORITHM_DEBUG_ADD_VAL
 // #define ALGORITHM_DEBUG_CHAR_GRAPH
 // #define ALGORITHM_DEBUG_ALGORITHM
-#include "modules/algorithm.h"
-#include <stdio.h>
-#include <queue>
-#include <cmath>
-#include <string.h>
-#include <vector>
-#include <algorithm>
 
 typedef enum move_operating mop_t;
 using std::vector;

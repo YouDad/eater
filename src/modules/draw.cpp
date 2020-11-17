@@ -1,7 +1,11 @@
-#include "modules/draw.h"
+// Copyright 2020 <luwh0708@thundersoft.com>
+#include <stdlib.h>
+
 #include <vector>
 #include <map>
-#include <stdlib.h>
+
+#include "modules/draw.h"
+
 #define fg_rgb(r, g, b) printf("\033[38;2;%d;%d;%dm", (r), (g), (b))
 #define bg_rgb(r, g, b) printf("\033[48;2;%d;%d;%dm", (r), (g), (b))
 
@@ -12,7 +16,7 @@ struct colorscheme {
 	const char *special_output;
 };
 
-struct colorscheme colorschemes[] = {
+static struct colorscheme colorschemes[] = {
 	{ '0', 0x000000, 0x000000, "", },
 	{ '9', 0xffffff, 0x000000, "口", },
 	{ '1', 0x880000, 0x880000, "", },

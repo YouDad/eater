@@ -1,4 +1,4 @@
-// #define NETWORK_DEBUG
+// Copyright 2020 <luwh0708@thundersoft.com>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -6,11 +6,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+
 #include <thread>
 #include <atomic>
 #include <mutex>
 
 #include "modules/network.h"
+
+// #define NETWORK_DEBUG
 
 static int socket_fd;
 

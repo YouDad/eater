@@ -1,14 +1,16 @@
-#include "modules/arg_parser.h"
+// Copyright 2020 <luwh0708@thundersoft.com>
 #include <stdio.h>
 #include <string.h>
 
-char key[40];
-char ip[32];
-uint32_t port_number;
-bool have_port = false;
-bool have_ip = false;
-bool have_key = false;
-bool have_record = false;
+#include "modules/arg_parser.h"
+
+static char key[40];
+static char ip[32];
+static uint32_t port_number;
+static bool have_port = false;
+static bool have_ip = false;
+static bool have_key = false;
+static bool have_record = false;
 
 int arg_parse(int argc, const char **argv) {
 	for (int i = 0; i < argc; i++) {

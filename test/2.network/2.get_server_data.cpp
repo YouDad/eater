@@ -1,7 +1,5 @@
-#include "modules/network.h"
-#include "utils/assert.h"
+// Copyright 2020 <luwh0708@thundersoft.com>
 #include <string.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +12,9 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
+
+#include "modules/network.h"
+#include "utils/assert.h"
 
 const char *data =
 	"[MAP C! wwwwwwww00000000000000000]"

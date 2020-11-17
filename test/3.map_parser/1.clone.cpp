@@ -1,6 +1,8 @@
+// Copyright 2020 <luwh0708@thundersoft.com>
+#include <string.h>
+
 #include "modules/map_parser.h"
 #include "utils/assert.h"
-#include <string.h>
 
 int main() {
 	char map[] =

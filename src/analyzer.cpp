@@ -1,12 +1,15 @@
-#include "modules/draw.h"
+// Copyright 2020 <luwh0708@thundersoft.com>
 #include <stdio.h>
-#include <vector>
-#include <string>
 #include <string.h>
 
+#include <vector>
+#include <string>
+
+#include "modules/draw.h"
+
 const int map_size = 25;
-int ptr = 0;
 int main() {
+	int ptr = 0;
 	auto fp = fopen(".record", "r");
 
 	std::vector<std::string> strings;
