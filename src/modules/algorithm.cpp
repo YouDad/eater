@@ -414,8 +414,13 @@ static vector<pair<mop_t, bool>> process_player(class server_data &m, int dr, in
 	}
 
 	// 对角线
-	dangerous_ops.push_back(make_pair(dr < 0 ? move_op_up : move_op_down, false));
-	dangerous_ops.push_back(make_pair(dc < 0 ? move_op_left : move_op_right, false));
+	if (abs(dr) == 1 && abs(dc) == 1) {
+		auto vertical_op = make_pair(dr < 0 ? move_op_up : move_op_down, false);
+		dangerous_ops.push_back(vertical_op);
+
+		auto horizontal_op = make_pair(dc < 0 ? move_op_left : move_op_right, false);
+		dangerous_ops.push_back(horizontal_op);
+	}
 
 	return dangerous_ops;
 }
