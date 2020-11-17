@@ -55,8 +55,12 @@ int evaluate(class server_data &m, double &score) {
 	memset(dist_graph, 0x7f, map_size * sizeof(int));
 #endif
 	auto get_dist = [&](int row, int col) -> int {
-		if (get_pos(row, col) >= map_size) printf("get dist %d\n", get_pos(row, col));
-		if (get_pos(row, col) < 0) printf("get dist %d\n", get_pos(row, col));
+		if (get_pos(row, col) >= map_size) {
+			printf("get dist %d\n", get_pos(row, col));
+		}
+		if (get_pos(row, col) < 0) {
+			printf("get dist %d\n", get_pos(row, col));
+		}
 		return dist_graph[get_pos(row, col)];
 	};
 	auto set_dist = [&](int row, int col, int dist) -> void {
@@ -97,7 +101,8 @@ int evaluate(class server_data &m, double &score) {
 			}
 			have_value = have_value && (move_dist <= get_dist(tr, tc));
 #ifdef ALGORITHM_DEBUG_DIST
-			printf("have: %d, %d <= %d\n", have_value, move_dist, get_dist(tr, tc));
+			printf("have: %d, %d <= %d\n",
+					have_value, move_dist, get_dist(tr, tc));
 #endif
 			if (have_value) {
 				pq.push(qnode(tr, tc, dir, move_dist));
@@ -124,8 +129,12 @@ int evaluate(class server_data &m, double &score) {
 	double *move_val = new double[map_size];
 	memset(move_val, 0, map_size * sizeof(double));
 	auto get_move_val = [&](int row, int col) -> double {
-		if (get_pos(row, col) >= map_size) printf("get move %d\n", get_pos(row, col));
-		if (get_pos(row, col) < 0) printf("get move %d\n", get_pos(row, col));
+		if (get_pos(row, col) >= map_size) {
+			printf("get move %d\n", get_pos(row, col));
+		}
+		if (get_pos(row, col) < 0) {
+			printf("get move %d\n", get_pos(row, col));
+		}
 		return move_val[get_pos(row, col)];
 	};
 	auto add_move_val = [&](int row, int col, double val) -> void {
@@ -138,7 +147,8 @@ int evaluate(class server_data &m, double &score) {
 		}
 		move_val[get_pos(row, col)] += val;
 	};
-	auto get_manhattan_dist = [](int i, int j, int r, int c) -> int {
+	// 计算曼哈顿距离
+	auto get_m_dist = [](int i, int j, int r, int c) -> int {
 		return abs(i - r) + abs(j - c);
 	};
 	auto get_fruit_val = [&](int i, int j) -> double {
@@ -212,14 +222,14 @@ int evaluate(class server_data &m, double &score) {
 				case 'G':
 					for (int dr = r - 3; dr <= r + 3; dr++) {
 						for (int dc = c - 3; dc <= c + 3; dc++) {
-							int dist = get_manhattan_dist(r, c, dr, dc);
+							int dist = get_m_dist(r, c, dr, dc);
 							if (0 < dist && dist <= 3) {
 								add_move_val(dr, dc, -get_fruit_val(dr, dc));
 							}
 						}
 					}
 					{
-						int dist = get_manhattan_dist(r, c, origin_row, origin_col);
+						int dist = get_m_dist(r, c, origin_row, origin_col);
 						if (dist <= 3) {
 							add_move_val(r, c, -25.0 / dist);
 						}
@@ -268,7 +278,8 @@ int evaluate(class server_data &m, double &score) {
 	return 0;
 }
 
-static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_t, bool>> &dops) {
+static pair<mop_t, bool> normal_algorithm(class server_data &m,
+		vector<pair<mop_t, bool>> &dops) {
 	const int old_score = m.get_my_score();
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 	for (int i = 0; i < dops.size(); i++) {
@@ -278,9 +289,10 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 
 	mop_t optimal_move_op;
 	bool optimal_is_fire;
-	// sp: situation point 局势分
 	double max_sp = -1e9;
-	auto update = [&](int score, double sp, mop_t move_op, bool is_fire) -> void {
+	// sp: situation point 局势分
+	// s: score
+	auto update = [&](int s, double sp, mop_t move_op, bool is_fire) -> void {
 		// skip dangerous operating
 		for (int i = 0; i < dops.size(); i++) {
 			if (dops[i].first == move_op && dops[i].second == is_fire) {
@@ -291,10 +303,10 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 			}
 		}
 
-		if (score > 0) {
-			sp += score * 2.5;
+		if (s > 0) {
+			sp += s * 2.5;
 		} else {
-			sp += score * 1.0;
+			sp += s * 1.0;
 		}
 		if (max_sp < sp) {
 #ifdef ALGORITHM_DEBUG_ALGORITHM
@@ -321,7 +333,8 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 		sp -= punishment;
 
 #ifdef ALGORITHM_DEBUG_ALGORITHM
-		printf("score: %d, point: %lf\n", cloned.get_my_score() - old_score, sp);
+		int delta_score = cloned.get_my_score() - old_score;
+		printf("score: %d, point: %lf\n", delta_score, sp);
 #endif
 
 		update(cloned.get_my_score() - old_score, sp, move_op, false);
@@ -338,7 +351,8 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 		sp -= punishment;
 
 #ifdef ALGORITHM_DEBUG_ALGORITHM
-		printf("score: %d, point: %lf\n", cloned.get_my_score() - old_score, sp);
+		int delta_score = cloned.get_my_score() - old_score;
+		printf("score: %d, point: %lf\n", delta_score, sp);
 #endif
 
 		update(cloned.get_my_score() - old_score, sp, move_op, true);
@@ -353,7 +367,8 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 	return make_pair(optimal_move_op, optimal_is_fire);
 }
 
-static vector<pair<mop_t, bool>> process_player(class server_data &m, int dr, int dc) {
+static vector<pair<mop_t, bool>> process_player(class server_data &m,
+		int dr, int dc) {
 	vector<pair<mop_t, bool>> dangerous_ops;
 	int r, c;
 	m.get_my_pos(r, c);
@@ -412,10 +427,16 @@ static vector<pair<mop_t, bool>> process_player(class server_data &m, int dr, in
 
 	// 对角线
 	if (abs(dr) == 1 && abs(dc) == 1) {
-		auto vertical_op = make_pair(dr < 0 ? move_op_up : move_op_down, false);
+		auto vertical_op = make_pair(move_op_down, false);
+		if (dr < 0) {
+			vertical_op.first = move_op_up;
+		}
 		dangerous_ops.push_back(vertical_op);
 
-		auto horizontal_op = make_pair(dc < 0 ? move_op_left : move_op_right, false);
+		auto horizontal_op = make_pair(move_op_right, false);
+		if (dc < 0) {
+			horizontal_op.first = move_op_left;
+		}
 		dangerous_ops.push_back(horizontal_op);
 	}
 

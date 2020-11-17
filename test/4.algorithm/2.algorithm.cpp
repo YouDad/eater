@@ -198,7 +198,8 @@ int main() {
 		"99999"
 		"54321"
 		"w2345"
-		"][LOCATION A@ 20 6 7 8][SCORE 10 1 2 3]", 5, 0, move_op_up, false);
+		"][LOCATION A@ 20 6 7 8][SCORE 10 1 2 3]",
+		5, 0, move_op_up, false);
 
 	test("[MAP A@ "
 		"w3000"
@@ -206,7 +207,8 @@ int main() {
 		"00000"
 		"00000"
 		"0000G"
-		"][LOCATION A@ 0][SCORE 10]", 5, 0, move_op_right, false);
+		"][LOCATION A@ 0][SCORE 10]",
+		5, 0, move_op_right, false);
 
 	return 0;
 }

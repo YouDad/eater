@@ -23,7 +23,7 @@ int main() {
 
 	std::thread server_thread([]() ->void {
 		int listen_fd, ret;
-		struct sockaddr_in server_addr;
+		struct sockaddr_in listen_addr;
 		char buf[128];
 
 		listen_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -32,12 +32,13 @@ int main() {
 			return;
 		}
 
-		memset(&server_addr, 0, sizeof(server_addr));
-		server_addr.sin_family = AF_INET;
-		server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-		server_addr.sin_port = htons(9000);
+		memset(&listen_addr, 0, sizeof(listen_addr));
+		listen_addr.sin_family = AF_INET;
+		listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+		listen_addr.sin_port = htons(9000);
 
-		ret = bind(listen_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+		auto _sock_addr = (struct sockaddr *)&listen_addr;
+		ret = bind(listen_fd, _sock_addr, sizeof(listen_addr));
 		if (ret < 0) {
 			perror("bind");
 			return;
