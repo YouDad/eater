@@ -17,10 +17,33 @@
 // #define ALGORITHM_DEBUG_CHAR_GRAPH
 // #define ALGORITHM_DEBUG_ALGORITHM
 
-typedef enum move_operating mop_t;
 using std::vector;
 using std::pair;
 using std::make_pair;
+typedef enum move_operating mop_t;
+typedef pair<mop_t, bool> op_t;
+typedef vector<op_t> ops_t;
+typedef ops_t(* special_func_t)(class server_data &m, int dr, int dc, char ch);
+
+static bool is_wall(char ch) {
+	return ch == '9';
+}
+
+static bool is_fruit(char ch) {
+	return ch == '1' || ch == '2' || ch == '3' || ch == '4' || ch == '5';
+}
+
+static bool is_bullet(char ch) {
+	return ch == '<' || ch == '>' || ch == '^' || ch == 'v';
+}
+
+static bool is_player(char ch) {
+	return ch == 'w' || ch == 'a' || ch == 's' || ch == 'd';
+}
+
+static bool is_ghost(char ch) {
+	return ch == 'G';
+}
 
 int evaluate(class server_data &m, double &score) {
 	int line_size = m.get_map_size();
@@ -53,11 +76,13 @@ int evaluate(class server_data &m, double &score) {
 
 	// 计算距离图
 	int *dist_graph = new int[map_size];
+
 #ifdef ALGORITHM_DEBUG_MEMSET
 	for (int i = 0; i < map_size; i++) dist_graph[i] = 999;
 #else
 	memset(dist_graph, 0x7f, map_size * sizeof(int));
 #endif
+
 	auto get_dist = [&](int row, int col) -> int {
 		if (get_pos(row, col) >= map_size) {
 			printf("get dist %d\n", get_pos(row, col));
@@ -67,6 +92,7 @@ int evaluate(class server_data &m, double &score) {
 		}
 		return dist_graph[get_pos(row, col)];
 	};
+
 	auto set_dist = [&](int row, int col, int dist) -> void {
 		int pos = get_pos(row, col);
 		if (pos < 0 || pos >= map_size) {
@@ -90,24 +116,32 @@ int evaluate(class server_data &m, double &score) {
 			// 目标行列
 			int tr = node.row + (dir == 's') - (dir == 'w');
 			int tc = node.col + (dir == 'd') - (dir == 'a');
+
 #ifdef ALGORITHM_DEBUG_DIST
 			printf("target: %d, %d\n", tr, tc);
 #endif
+
 			// 不能是墙
-			bool have_value = m.get(tr, tc) != '9';
+			bool have_value = !is_wall(m.get(tr, tc));
+
 			// 距离要更优
 			int move_dist = node.dist + 1 + (node.dir != dir);
+
+			// 边界检查
 			if (tr < 0 || tr >= line_size) {
 				return;
 			}
 			if (tc < 0 || tc >= line_size) {
 				return;
 			}
+
 			have_value = have_value && (move_dist <= get_dist(tr, tc));
+
 #ifdef ALGORITHM_DEBUG_DIST
 			printf("have: %d, %d <= %d\n",
 					have_value, move_dist, get_dist(tr, tc));
 #endif
+
 			if (have_value) {
 				pq.push(qnode(tr, tc, dir, move_dist));
 			}
@@ -166,23 +200,22 @@ int evaluate(class server_data &m, double &score) {
 	for (int r = 0; r < line_size; r++) {
 		for (int c = 0; c < line_size; c++) {
 			char ch = m.get(r, c);
-			switch (ch) {
-				case '1': case '2': case '3': case '4': case '5':
-					add_move_val(r, c, get_fruit_val(r, c));
-					break;
+			if (is_fruit(ch)) {
+				add_move_val(r, c, get_fruit_val(r, c));
+			}
 
-				case 'w': case 'a': case 's': case 'd':
-					if (r == origin_row && c == origin_col) {
-						break;
-					}
+			if (is_player(ch)) {
+				if (!(r == origin_row && c == origin_col)) {
 					for (int dr = r - 2; dr <= r + 2; dr++) {
 						for (int dc = c - 2; dc <= c + 2; dc++) {
 							add_move_val(dr, dc, -move_val[get_pos(dr, dc)]);
 							add_move_val(dr, dc, -get_fruit_val(dr, dc));
 						}
 					}
-					break;
+				}
+			}
 
+			switch (ch) {
 				case '<':
 					for (int i = c - 1; i >= 0; i--) {
 						if (m.get(r, i) != '9') {
@@ -222,23 +255,23 @@ int evaluate(class server_data &m, double &score) {
 						}
 					}
 					break;
+			}
 
-				case 'G':
-					for (int dr = r - 3; dr <= r + 3; dr++) {
-						for (int dc = c - 3; dc <= c + 3; dc++) {
-							int dist = get_m_dist(r, c, dr, dc);
-							if (0 < dist && dist <= 3) {
-								add_move_val(dr, dc, -get_fruit_val(dr, dc));
-							}
+			if (is_ghost(ch)) {
+				for (int dr = r - 3; dr <= r + 3; dr++) {
+					for (int dc = c - 3; dc <= c + 3; dc++) {
+						int dist = get_m_dist(r, c, dr, dc);
+						if (0 < dist && dist <= 3) {
+							add_move_val(dr, dc, -get_fruit_val(dr, dc));
 						}
 					}
-					{
-						int dist = get_m_dist(r, c, origin_row, origin_col);
-						if (dist <= 3) {
-							add_move_val(r, c, -25.0 / dist);
-						}
+				}
+				{
+					int dist = get_m_dist(r, c, origin_row, origin_col);
+					if (dist <= 3) {
+						add_move_val(r, c, -25.0 / dist);
 					}
-					break;
+				}
 			}
 		}
 	}
@@ -282,8 +315,7 @@ int evaluate(class server_data &m, double &score) {
 	return 0;
 }
 
-static pair<mop_t, bool> normal_algorithm(class server_data &m,
-		vector<pair<mop_t, bool>> &dops) {
+static op_t normal_algorithm(class server_data &m, ops_t &dops, ops_t &rops) {
 	const int old_score = m.get_my_score();
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 	for (int i = 0; i < dops.size(); i++) {
@@ -304,6 +336,15 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m,
 				printf("skip!\n");
 #endif
 				return;
+			}
+		}
+
+		for (int i = 0; i < dops.size(); i++) {
+			if (dops[i].first == move_op && dops[i].second == is_fire) {
+#ifdef ALGORITHM_DEBUG_ALGORITHM
+				printf("recommand!\n");
+#endif
+				sp += 5;
 			}
 		}
 
@@ -371,9 +412,8 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m,
 	return make_pair(optimal_move_op, optimal_is_fire);
 }
 
-static vector<pair<mop_t, bool>> process_player(class server_data &m,
-		int dr, int dc) {
-	vector<pair<mop_t, bool>> dangerous_ops;
+static ops_t process_player_danger(class server_data &m, int dr, int dc) {
+	ops_t dangerous_ops;
 	int r, c;
 	m.get_my_pos(r, c);
 
@@ -447,72 +487,151 @@ static vector<pair<mop_t, bool>> process_player(class server_data &m,
 	return dangerous_ops;
 }
 
-static vector<pair<mop_t, bool>> process_ghost(class server_data &m, int dr, int dc) {
-	vector<pair<mop_t, bool>> dangerous_ops;
+static ops_t process_player_recommand(class server_data &m, int dr, int dc) {
+	ops_t recommand_ops;
+	return recommand_ops;
+}
+
+static ops_t process_ghost_danger(class server_data &m, int dr, int dc) {
+	ops_t dangerous_ops;
 
 	if (dr != 0) {
-		dangerous_ops.push_back(make_pair(dr < 0 ? move_op_up : move_op_down, false));
+		auto op = make_pair(move_op_down, false);
+
+		if (dr < 0) {
+			op.first = move_op_up;
+		}
+
+		dangerous_ops.push_back(op);
 	}
 
 	if (dc != 0) {
-		dangerous_ops.push_back(make_pair(dc < 0 ? move_op_left : move_op_right, false));
+		auto op = make_pair(move_op_right, false);
+
+		if (dc < 0) {
+			op.first = move_op_left;
+		}
+
+		dangerous_ops.push_back(op);
 	}
 
 	return dangerous_ops;
 }
 
-static vector<pair<mop_t, bool>> special_algorithm(class server_data &m) {
-	vector<pair<mop_t, bool>> dangerous_ops;
+static ops_t process_ghost_recommand(class server_data &m, int dr, int dc) {
+	ops_t recommand_ops;
+
+	if (dr == 2 && dc == 0) {
+		auto op = make_pair(move_op_down, true);
+
+		if (dr < 0) {
+			op.first = move_op_up;
+		}
+
+		recommand_ops.push_back(op);
+	}
+
+	if (0 < abs(dc) && abs(dc) <= 2) {
+		auto op = make_pair(move_op_right, true);
+
+		if (dc < 0) {
+			op.first = move_op_left;
+		}
+
+		recommand_ops.push_back(op);
+	}
+
+	return recommand_ops;
+}
+
+static bool dist_bound_check_pass(class server_data &m,
+		int r, int c, int dr, int dc, int min_dist, int max_dist) {
+	// 曼哈顿距离[min_dist, max_dist]
+	int dist = abs(dr) + abs(dc);
+	if (min_dist > dist || dist > max_dist) {
+		return false;
+	}
+
+	// 边界检查
+	if (0 > r + dr || r + dr >= m.get_map_size()) {
+		return false;
+	}
+
+	if (0 > c + dc || c + dc >= m.get_map_size()) {
+		return false;
+	}
+	return true;
+}
+
+// dmin: min dist
+// dmax: max dist
+static ops_t special_algorithm(class server_data &m,
+		int dmin, int dmax, special_func_t func) {
+	ops_t special_ops;
 
 	int r, c;
 	m.get_my_pos(r, c);
 
-	for (int dr = -2; dr <= 2; dr++) {
-		for (int dc = -2; dc <= 2; dc++) {
-			// 曼哈顿距离[1, 2]
-			int dist = abs(dr) + abs(dc);
-			if (dist == 0 || dist > 2) {
+	for (int dr = -dmax; dr <= dmax; dr++) {
+		for (int dc = -dmax; dc <= dmax; dc++) {
+			bool is_pass = dist_bound_check_pass(m, r, c, dr, dc, dmin, dmax);
+			if (!is_pass) {
 				continue;
 			}
 
-			// 边界检查
-			if (0 > r + dr || r + dr >= m.get_map_size()) {
-				continue;
-			}
-			if (0 > c + dc || c + dc >= m.get_map_size()) {
-				continue;
-			}
-
-			vector<pair<mop_t, bool>> ret;
 			char ch = m.get(r + dr, c + dc);
-			switch(ch) {
-				case 'w': case 'a':
-				case 's': case 'd':
-					ret = process_player(m, dr, dc);
-					for (int i = 0; i < ret.size(); i++) {
-						dangerous_ops.push_back(ret[i]);
-					}
-					break;
-
-				case 'G':
-					ret = process_ghost(m, dr, dc);
-					for (int i = 0; i < ret.size(); i++) {
-						dangerous_ops.push_back(ret[i]);
-					}
-					break;
-
-				default:
-					break;
+			auto ret = func(m, dr, dc, ch);
+			for (int i = 0; i < ret.size(); i++) {
+				special_ops.push_back(ret[i]);
 			}
 		}
 	}
 
-	return dangerous_ops;
+	return special_ops;
 }
 
-pair<mop_t, bool> algorithm(class server_data &m) {
-	auto dangerous_ops = special_algorithm(m);
-	auto ret = normal_algorithm(m, dangerous_ops);
+op_t algorithm(class server_data &m) {
+	auto dangerous_ops = special_algorithm(m, 1, 2, [](class server_data &m,
+				int dr, int dc, char ch) -> ops_t {
+		ops_t ops, ret;
+
+		if (is_ghost(ch)) {
+			ret = process_ghost_danger(m, dr, dc);
+			for (int i = 0; i < ret.size(); i++) {
+				ops.push_back(ret[i]);
+			}
+		}
+
+		if (is_player(ch)) {
+			ret = process_player_danger(m, dr, dc);
+			for (int i = 0; i < ret.size(); i++) {
+				ops.push_back(ret[i]);
+			}
+		}
+		return ops;
+	});
+
+	auto recommand_ops = special_algorithm(m, 1, 2, [](class server_data &m,
+				int dr, int dc, char ch) -> ops_t {
+		ops_t ops, ret;
+
+		if (is_ghost(ch)) {
+			ret = process_ghost_recommand(m, dr, dc);
+			for (int i = 0; i < ret.size(); i++) {
+				ops.push_back(ret[i]);
+			}
+		}
+
+		if (is_player(ch)) {
+			ret = process_player_recommand(m, dr, dc);
+			for (int i = 0; i < ret.size(); i++) {
+				ops.push_back(ret[i]);
+			}
+		}
+		return ops;
+	});
+
+	auto ret = normal_algorithm(m, dangerous_ops, recommand_ops);
 
 	return ret;
 }
