@@ -417,6 +417,47 @@ static op_t normal_algorithm(class server_data &m, ops_t &dops, ops_t &rops) {
 	return make_pair(optimal_move_op, optimal_is_fire);
 }
 
+struct strategy {
+	int dr;
+	int dc;
+	char we;      // 0 for any
+	char player;  // 0 for any
+	mop_t move;
+	bool is_fire;
+};
+
+static void exec_strategys(struct strategy *strategys, int len,
+		ops_t &ops, class server_data &m, int dr, int dc) {
+	int r, c;
+	m.get_my_pos(r, c);
+	char we = m.get(r, c);
+	char player = m.get(r + dr, c + dc);
+
+	for (int i = 0; i < len; i++) {
+		auto& s = strategys[i];
+
+		if (s.we > 0 && we != s.we) {
+			continue;
+		}
+		if (s.we < 0 && we == -s.we) {
+			continue;
+		}
+
+		if (s.player > 0 && player != s.player) {
+			continue;
+		}
+		if (s.player < 0 && player == -s.player) {
+			continue;
+		}
+
+		if (s.dr != dr || s.dc != dc) {
+			continue;
+		}
+
+		ops.push_back(make_pair(s.move, s.is_fire));
+	}
+}
+
 static ops_t process_player_danger(class server_data &m, int dr, int dc) {
 	ops_t dangerous_ops;
 	int r, c;
@@ -494,6 +535,40 @@ static ops_t process_player_danger(class server_data &m, int dr, int dc) {
 
 static ops_t process_player_recommand(class server_data &m, int dr, int dc) {
 	ops_t recommand_ops;
+
+	struct strategy strategys[] = {
+	// 相邻
+		{ -1,  0, -'w', 0, move_op_up,    true, },
+		{ -1,  0,  'w', 0, move_op_stay,  true, },
+		{ +1,  0, -'s', 0, move_op_down,  true, },
+		{ +1,  0,  's', 0, move_op_stay,  true, },
+		{  0, -1, -'a', 0, move_op_left,  true, },
+		{  0, -1,  'a', 0, move_op_stay,  true, },
+		{  0, +1, -'d', 0, move_op_right, true, },
+		{  0, +1,  'd', 0, move_op_stay,  true, },
+	// 隔一格
+		{ -2,  0,  'w', 0, move_op_stay,  true, },
+		{ +2,  0,  'w', 0, move_op_down,  true, },
+		{ -2,  0,  's', 0, move_op_up,    true, },
+		{ +2,  0,  's', 0, move_op_stay,  true, },
+		{  0, -2,  'a', 0, move_op_stay,  true, },
+		{  0, +2,  'a', 0, move_op_right, true, },
+		{  0, -2,  'd', 0, move_op_left,  true, },
+		{  0, +2,  'd', 0, move_op_stay,  true, },
+	// 对角线
+		{ +1, +1,    0, 0, move_op_up,    false, },
+		{ +1, +1,    0, 0, move_op_left,  false, },
+		{ -1, +1,    0, 0, move_op_down,  false, },
+		{ -1, +1,    0, 0, move_op_left,  false, },
+		{ +1, -1,    0, 0, move_op_right, false, },
+		{ +1, -1,    0, 0, move_op_up,    false, },
+		{ -1, -1,    0, 0, move_op_right, false, },
+		{ -1, -1,    0, 0, move_op_down,  false, },
+	};
+
+	int len = sizeof(strategys) / sizeof(*strategys);
+	exec_strategys(strategys, len, recommand_ops, m, dr, dc);
+
 	return recommand_ops;
 }
 
