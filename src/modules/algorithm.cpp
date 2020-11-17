@@ -12,7 +12,7 @@
 // #define ALGORITHM_DEBUG_MEMSET
 // #define ALGORITHM_DEBUG_DIST
 // #define ALGORITHM_DEBUG_DIST_GRAPH
-// #define ALGORITHM_DEBUG_MOVE_VAL
+// #define ALGORITHM_DEBUG_MOVE_VAL_GRAPH
 // #define ALGORITHM_DEBUG_ADD_VAL
 // #define ALGORITHM_DEBUG_CHAR_GRAPH
 // #define ALGORITHM_DEBUG_ALGORITHM
@@ -166,6 +166,7 @@ int evaluate(class server_data &m, double &score) {
 	// 计算移动价值图
 	double *move_val = new double[map_size];
 	memset(move_val, 0, map_size * sizeof(double));
+
 	auto get_move_val = [&](int row, int col) -> double {
 		if (get_pos(row, col) >= map_size) {
 			printf("get move %d\n", get_pos(row, col));
@@ -175,16 +176,20 @@ int evaluate(class server_data &m, double &score) {
 		}
 		return move_val[get_pos(row, col)];
 	};
+
 	auto add_move_val = [&](int row, int col, double val) -> void {
+
 #ifdef ALGORITHM_DEBUG_ADD_VAL
 		printf("set move (%d, %d) += %lf\n", row, col, val);
 #endif
+
 		int pos = get_pos(row, col);
 		if (pos < 0 || pos >= map_size) {
 			return;
 		}
 		move_val[get_pos(row, col)] += val;
 	};
+
 	// 计算曼哈顿距离
 	auto get_m_dist = [](int i, int j, int r, int c) -> int {
 		return abs(i - r) + abs(j - c);
@@ -276,7 +281,7 @@ int evaluate(class server_data &m, double &score) {
 		}
 	}
 
-#ifdef ALGORITHM_DEBUG_MOVE_VAL
+#ifdef ALGORITHM_DEBUG_MOVE_VAL_GRAPH
 	printf("move_val:\n");
 	for (int i = 0; i < line_size; i++) {
 		for (int j = 0; j < line_size; j++) {
@@ -339,12 +344,12 @@ static op_t normal_algorithm(class server_data &m, ops_t &dops, ops_t &rops) {
 			}
 		}
 
-		for (int i = 0; i < dops.size(); i++) {
-			if (dops[i].first == move_op && dops[i].second == is_fire) {
+		for (int i = 0; i < rops.size(); i++) {
+			if (rops[i].first == move_op && rops[i].second == is_fire) {
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 				printf("recommand!\n");
 #endif
-				sp += 5;
+				sp += 100;
 			}
 		}
 
@@ -396,7 +401,7 @@ static op_t normal_algorithm(class server_data &m, ops_t &dops, ops_t &rops) {
 		sp -= punishment;
 
 #ifdef ALGORITHM_DEBUG_ALGORITHM
-		int delta_score = cloned.get_my_score() - old_score;
+		delta_score = cloned.get_my_score() - old_score;
 		printf("score: %d, point: %lf\n", delta_score, sp);
 #endif
 
@@ -520,6 +525,8 @@ static ops_t process_ghost_danger(class server_data &m, int dr, int dc) {
 
 static ops_t process_ghost_recommand(class server_data &m, int dr, int dc) {
 	ops_t recommand_ops;
+	int r, c;
+	m.get_my_pos(r, c);
 
 	if (dr == 2 && dc == 0) {
 		auto op = make_pair(move_op_down, true);
@@ -531,11 +538,21 @@ static ops_t process_ghost_recommand(class server_data &m, int dr, int dc) {
 		recommand_ops.push_back(op);
 	}
 
-	if (0 < abs(dc) && abs(dc) <= 2) {
+	if (0 < dc && dc <= 2) {
 		auto op = make_pair(move_op_right, true);
 
-		if (dc < 0) {
-			op.first = move_op_left;
+		if (m.get(r, c) == 'd') {
+			op.first = move_op_stay;
+		}
+
+		recommand_ops.push_back(op);
+	}
+
+	if (0 > dc && dc >= -2) {
+		auto op = make_pair(move_op_left, true);
+
+		if (m.get(r, c) == 'a') {
+			op.first = move_op_stay;
 		}
 
 		recommand_ops.push_back(op);
