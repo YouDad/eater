@@ -174,6 +174,8 @@ int evaluate(class server_data &m, double &score)
 					for (int k = j - 1; k >= 0; k--) {
 						if (m.get(i, k) != '9') {
 							add_move_val(i, k, -25.0 / (j - k) / (j - k));
+						} else {
+							break;
 						}
 					}
 					break;
@@ -182,6 +184,8 @@ int evaluate(class server_data &m, double &score)
 					for (int k = i - 1; k >= 0; k--) {
 						if (m.get(k, j) != '9') {
 							add_move_val(k, j, -25.0 / (i - k) / (i - k));
+						} else {
+							break;
 						}
 					}
 					break;
@@ -190,6 +194,8 @@ int evaluate(class server_data &m, double &score)
 					for (int k = j + 1; k < line_size; k++) {
 						if (m.get(i, k) != '9') {
 							add_move_val(i, k, -25.0 / (k - j) / (k - j));
+						} else {
+							break;
 						}
 					}
 					break;
@@ -198,6 +204,8 @@ int evaluate(class server_data &m, double &score)
 					for (int k = i + 1; k < line_size; k++) {
 						if (m.get(k, j) != '9') {
 							add_move_val(k, j, -25.0 / (k - i) / (k - i));
+						} else {
+							break;
 						}
 					}
 					break;
