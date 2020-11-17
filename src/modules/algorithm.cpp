@@ -159,12 +159,13 @@ int evaluate(class server_data &m, double &score)
 					break;
 
 				case 'w': case 'a': case 's': case 'd':
-					if (i != origin_row && j != origin_col) {
-						for (int di = i - 2; di <= i + 2; di++) {
-							for (int dj = j - 2; dj <= j + 2; dj++) {
-								add_move_val(di, dj, -move_val[get_pos(di, dj)]);
-								add_move_val(di, dj, -get_fruit_val(di, dj));
-							}
+					if (i == origin_row && j == origin_col) {
+						break;
+					}
+					for (int di = i - 2; di <= i + 2; di++) {
+						for (int dj = j - 2; dj <= j + 2; dj++) {
+							add_move_val(di, dj, -move_val[get_pos(di, dj)]);
+							add_move_val(di, dj, -get_fruit_val(di, dj));
 						}
 					}
 					break;
