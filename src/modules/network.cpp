@@ -49,12 +49,10 @@ int my_send(const char *str) {
 	printf("send[%d]: \"%s\"\n", socket_fd, str);
 #endif
 	// 3是括号和\0
-	int buf_size = strlen(str) + 3;
-	char *buf = new char[buf_size];
-	snprintf(buf, buf_size, "(%s)", str);
+	char buf[64];
+	snprintf(buf, sizeof(buf), "(%s)", str);
 
 	int ret = send(socket_fd, buf, strlen(buf), 0);
-	delete []buf;
 
 	return ret;
 }
