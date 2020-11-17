@@ -150,30 +150,30 @@ int evaluate(class server_data &m, double &score)
 		return 0;
 	};
 
-	for (int i = 0; i < line_size; i++) {
-		for (int j = 0; j < line_size; j++) {
-			char ch = m.get(i, j);
+	for (int r = 0; r < line_size; r++) {
+		for (int c = 0; c < line_size; c++) {
+			char ch = m.get(r, c);
 			switch (ch) {
 				case '1': case '2': case '3': case '4': case '5':
-					add_move_val(i, j, get_fruit_val(i, j));
+					add_move_val(r, c, get_fruit_val(r, c));
 					break;
 
 				case 'w': case 'a': case 's': case 'd':
-					if (i == origin_row && j == origin_col) {
+					if (r == origin_row && c == origin_col) {
 						break;
 					}
-					for (int di = i - 2; di <= i + 2; di++) {
-						for (int dj = j - 2; dj <= j + 2; dj++) {
-							add_move_val(di, dj, -move_val[get_pos(di, dj)]);
-							add_move_val(di, dj, -get_fruit_val(di, dj));
+					for (int dr = r - 2; dr <= r + 2; dr++) {
+						for (int dc = c - 2; dc <= c + 2; dc++) {
+							add_move_val(dr, dc, -move_val[get_pos(dr, dc)]);
+							add_move_val(dr, dc, -get_fruit_val(dr, dc));
 						}
 					}
 					break;
 
 				case '<':
-					for (int k = j - 1; k >= 0; k--) {
-						if (m.get(i, k) != '9') {
-							add_move_val(i, k, -25.0 / (j - k) / (j - k));
+					for (int i = c - 1; i >= 0; i--) {
+						if (m.get(r, i) != '9') {
+							add_move_val(r, i, -25.0 / (c - i) / (c - i));
 						} else {
 							break;
 						}
@@ -181,9 +181,9 @@ int evaluate(class server_data &m, double &score)
 					break;
 
 				case '^':
-					for (int k = i - 1; k >= 0; k--) {
-						if (m.get(k, j) != '9') {
-							add_move_val(k, j, -25.0 / (i - k) / (i - k));
+					for (int i = r - 1; i >= 0; i--) {
+						if (m.get(i, c) != '9') {
+							add_move_val(i, c, -25.0 / (r - i) / (r - i));
 						} else {
 							break;
 						}
@@ -191,9 +191,9 @@ int evaluate(class server_data &m, double &score)
 					break;
 
 				case '>':
-					for (int k = j + 1; k < line_size; k++) {
-						if (m.get(i, k) != '9') {
-							add_move_val(i, k, -25.0 / (k - j) / (k - j));
+					for (int i = c + 1; i < line_size; i++) {
+						if (m.get(r, i) != '9') {
+							add_move_val(r, i, -25.0 / (i - c) / (i - c));
 						} else {
 							break;
 						}
@@ -201,9 +201,9 @@ int evaluate(class server_data &m, double &score)
 					break;
 
 				case 'v':
-					for (int k = i + 1; k < line_size; k++) {
-						if (m.get(k, j) != '9') {
-							add_move_val(k, j, -25.0 / (k - i) / (k - i));
+					for (int i = r + 1; i < line_size; i++) {
+						if (m.get(i, c) != '9') {
+							add_move_val(i, c, -25.0 / (i - r) / (i - r));
 						} else {
 							break;
 						}
@@ -211,18 +211,18 @@ int evaluate(class server_data &m, double &score)
 					break;
 
 				case 'G':
-					for (int di = i - 3; di <= i + 3; di++) {
-						for (int dj = j - 3; dj <= j + 3; dj++) {
-							int dist = get_manhattan_dist(i, j, di, dj);
+					for (int dr = r - 3; dr <= r + 3; dr++) {
+						for (int dc = c - 3; dc <= c + 3; dc++) {
+							int dist = get_manhattan_dist(r, c, dr, dc);
 							if (0 < dist && dist <= 3) {
-								add_move_val(di, dj, -get_fruit_val(di, dj));
+								add_move_val(dr, dc, -get_fruit_val(dr, dc));
 							}
 						}
 					}
 					{
-						int dist = get_manhattan_dist(i, j, origin_row, origin_col);
+						int dist = get_manhattan_dist(r, c, origin_row, origin_col);
 						if (dist <= 3) {
-							add_move_val(i, j, -25.0 / dist);
+							add_move_val(r, c, -25.0 / dist);
 						}
 					}
 					break;
