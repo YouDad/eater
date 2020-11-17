@@ -3,8 +3,7 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
 
-int main()
-{
+int main() {
 	int ret;
 	uint32_t addr, port;
 

@@ -2,8 +2,7 @@
 #include "utils/assert.h"
 #include <string.h>
 
-int main()
-{
+int main() {
 	char map[] =
 		"[MAP A@ "
 		"12345"

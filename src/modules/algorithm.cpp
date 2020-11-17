@@ -18,8 +18,7 @@ using std::vector;
 using std::pair;
 using std::make_pair;
 
-int evaluate(class server_data &m, double &score)
-{
+int evaluate(class server_data &m, double &score) {
 	int line_size = m.get_map_size();
 	int map_size = line_size * line_size;
 
@@ -269,8 +268,7 @@ int evaluate(class server_data &m, double &score)
 	return 0;
 }
 
-static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_t, bool>> &dops)
-{
+static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_t, bool>> &dops) {
 	const int old_score = m.get_my_score();
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 	for (int i = 0; i < dops.size(); i++) {
@@ -355,8 +353,7 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 	return make_pair(optimal_move_op, optimal_is_fire);
 }
 
-static vector<pair<mop_t, bool>> process_player(class server_data &m, int dr, int dc)
-{
+static vector<pair<mop_t, bool>> process_player(class server_data &m, int dr, int dc) {
 	vector<pair<mop_t, bool>> dangerous_ops;
 	int r, c;
 	m.get_my_pos(r, c);
@@ -425,8 +422,7 @@ static vector<pair<mop_t, bool>> process_player(class server_data &m, int dr, in
 	return dangerous_ops;
 }
 
-static vector<pair<mop_t, bool>> process_ghost(class server_data &m, int dr, int dc)
-{
+static vector<pair<mop_t, bool>> process_ghost(class server_data &m, int dr, int dc) {
 	vector<pair<mop_t, bool>> dangerous_ops;
 
 	if (dr != 0) {
@@ -440,8 +436,7 @@ static vector<pair<mop_t, bool>> process_ghost(class server_data &m, int dr, int
 	return dangerous_ops;
 }
 
-static vector<pair<mop_t, bool>> special_algorithm(class server_data &m)
-{
+static vector<pair<mop_t, bool>> special_algorithm(class server_data &m) {
 	vector<pair<mop_t, bool>> dangerous_ops;
 
 	int r, c;
@@ -490,8 +485,7 @@ static vector<pair<mop_t, bool>> special_algorithm(class server_data &m)
 	return dangerous_ops;
 }
 
-pair<mop_t, bool> algorithm(class server_data &m)
-{
+pair<mop_t, bool> algorithm(class server_data &m) {
 	auto dangerous_ops = special_algorithm(m);
 	auto ret = normal_algorithm(m, dangerous_ops);
 

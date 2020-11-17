@@ -4,12 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-server_data::server_data()
-{
+server_data::server_data() {
 }
 
-server_data::server_data(char *data, int size, int id)
-{
+server_data::server_data(char *data, int size, int id) {
 	_map = new char[size * size + 1];
 	char pos_str[64];
 	char score_str[64];
@@ -51,13 +49,11 @@ server_data::server_data(char *data, int size, int id)
 	}
 }
 
-server_data::~server_data()
-{
+server_data::~server_data() {
 	delete []_map;
 }
 
-class server_data server_data::clone()
-{
+class server_data server_data::clone() {
 	class server_data ret;
 	ret._map = new char[_size * _size + 1];
 	memcpy(ret._map, _map, _size * _size + 1);
@@ -77,13 +73,11 @@ class server_data server_data::clone()
 	return ret;
 }
 
-int server_data::get_map_size()
-{
+int server_data::get_map_size() {
 	return _size;
 }
 
-char server_data::get(int row, int col)
-{
+char server_data::get(int row, int col) {
 	if (row < 0 || row >= _size) {
 		return 0;
 	}
@@ -93,8 +87,7 @@ char server_data::get(int row, int col)
 	return _map[row * _size + col];
 }
 
-int server_data::get_score_by_pos(int pos)
-{
+int server_data::get_score_by_pos(int pos) {
 	for (int i = 0; i < _positions.size(); i++) {
 		if (_positions[i] == pos) {
 			return _scores[i];
@@ -103,24 +96,20 @@ int server_data::get_score_by_pos(int pos)
 	return -1;
 }
 
-void server_data::get_my_pos(int &row, int &col)
-{
+void server_data::get_my_pos(int &row, int &col) {
 	int pos = _positions[_id];
 	row = pos / _size;
 	col = pos % _size;
 }
 
-int server_data::get_my_score()
-{
+int server_data::get_my_score() {
 	return _scores[_id];
 }
 
-void server_data::calc_ball()
-{
+void server_data::calc_ball() {
 }
 
-int server_data::move(enum move_operating move_op)
-{
+int server_data::move(enum move_operating move_op) {
 	int r, c;
 	get_my_pos(r, c);
 
@@ -176,8 +165,7 @@ int server_data::move(enum move_operating move_op)
 	return 0;
 }
 
-int server_data::fire()
-{
+int server_data::fire() {
 	int r, c;
 	get_my_pos(r, c);
 
@@ -247,8 +235,7 @@ int server_data::fire()
 	return 0;
 }
 
-int server_data::set(int row, int col, char ch)
-{
+int server_data::set(int row, int col, char ch) {
 	if (row >= _size || col >= _size || row < 0 || col < 0) {
 		return 1;
 	}
@@ -257,7 +244,6 @@ int server_data::set(int row, int col, char ch)
 	return 0;
 }
 
-bool server_data::over()
-{
+bool server_data::over() {
 	return _positions[_id] == -1;
 }

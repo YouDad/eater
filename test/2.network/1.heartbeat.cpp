@@ -15,8 +15,7 @@
 #include <atomic>
 #include <mutex>
 
-int main()
-{
+int main() {
 	int ret;
 
 	ret = connect(0x7f000001, 9000, "c96f4d7661c94cbb9706469649a7cbbc");

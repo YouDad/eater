@@ -7,8 +7,7 @@
 #include "modules/algorithm.h"
 #include "modules/draw.h"
 
-int main(int argc, const char **argv)
-{
+int main(int argc, const char **argv) {
 	int ret;
 
 	ret = arg_parse(argc, argv);

@@ -10,8 +10,7 @@ bool have_ip = false;
 bool have_key = false;
 bool have_record = false;
 
-int arg_parse(int argc, const char **argv)
-{
+int arg_parse(int argc, const char **argv) {
 	for (int i = 0; i < argc; i++) {
 		if (strcmp(argv[i], "--ip") == 0 && i + 1 < argc) {
 			if (strlen(argv[i + 1]) <= 16) {
@@ -46,8 +45,7 @@ int arg_parse(int argc, const char **argv)
 	return have_ip || have_port ? 0 : 1;
 }
 
-int get_ip(uint32_t &addr)
-{
+int get_ip(uint32_t &addr) {
 	if (!have_ip) {
 		return 1;
 	}
@@ -79,8 +77,7 @@ int get_ip(uint32_t &addr)
 	return 0;
 }
 
-int get_port(uint32_t &port)
-{
+int get_port(uint32_t &port) {
 	if (have_port && 0 <= port_number && port_number < 65536) {
 		port = port_number;
 		return 0;
@@ -88,8 +85,7 @@ int get_port(uint32_t &port)
 	return 1;
 }
 
-int get_key(char *k)
-{
+int get_key(char *k) {
 	if (have_key) {
 		strcpy(k, key);
 		return 0;
@@ -97,7 +93,6 @@ int get_key(char *k)
 	return 1;
 }
 
-bool is_recording()
-{
+bool is_recording() {
 	return have_record;
 }

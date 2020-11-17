@@ -20,8 +20,7 @@ const char *data =
 	"[LOCATION C! 0 1 2 3 4 5 6 7]"
 	"[SCORE 0 0 0 0 0 0 0 0]";
 
-int main()
-{
+int main() {
 	int ret;
 
 	ret = connect(0x7f000001, 9000, "c96f4d7661c94cbb9706469649a7cbbc");

@@ -6,8 +6,7 @@
 
 const int map_size = 25;
 int ptr = 0;
-int main()
-{
+int main() {
 	auto fp = fopen(".record", "r");
 
 	std::vector<std::string> strings;

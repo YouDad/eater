@@ -30,8 +30,7 @@ struct colorscheme colorschemes[] = {
 };
 const int colorschemes_size = sizeof(colorschemes) / sizeof(*colorschemes);
 
-static void use_color(char c)
-{
+static void use_color(char c) {
 	for (int i = 0; i < colorschemes_size; i++) {
 		if (colorschemes[i].match_char == c) {
 			int fg = colorschemes[i].fg;
@@ -45,45 +44,37 @@ static void use_color(char c)
 	}
 }
 
-static void reset_color()
-{
+static void reset_color() {
 	printf("\033[0m");
 }
 
-static void cursor_up(int cnt)
-{
+static void cursor_up(int cnt) {
 	printf("\033[%dA", cnt);
 }
 
-static void cursor_down(int cnt)
-{
+static void cursor_down(int cnt) {
 	printf("\033[%dB", cnt);
 }
 
-static void cursor_right(int cnt)
-{
+static void cursor_right(int cnt) {
 	printf("\033[%dC", cnt);
 }
 
-static void cursor_left(int cnt)
-{
+static void cursor_left(int cnt) {
 	printf("\033[%dD", cnt);
 }
 
-static void cursor_save()
-{
+static void cursor_save() {
 	printf("\033[s");
 }
 
-static void cursor_recover()
-{
+static void cursor_recover() {
 	printf("\033[u");
 }
 
 
 static int draw_cnt = 0;
-void draw(char *buf, int map_size, int player_id)
-{
+void draw(char *buf, int map_size, int player_id) {
 	char *map = new char[map_size * map_size + 1];
 	char location[100], score[100];
 	int n = 0, m = 0;

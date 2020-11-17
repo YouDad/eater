@@ -27,8 +27,7 @@ static char token[4];
 static char *map;
 static bool game_over;
 
-int my_recv(char *buf, int buf_size)
-{
+int my_recv(char *buf, int buf_size) {
 	int ret = recv(socket_fd, buf, buf_size, 0);
 
 	if (ret > 0) {
@@ -42,8 +41,7 @@ int my_recv(char *buf, int buf_size)
 	return ret;
 }
 
-int my_send(const char *str)
-{
+int my_send(const char *str) {
 #ifdef NETWORK_DEBUG
 	printf("send[%d]: \"%s\"\n", socket_fd, str);
 #endif
@@ -58,8 +56,7 @@ int my_send(const char *str)
 	return ret;
 }
 
-int connect(uint32_t ip_addr, uint32_t port, const char *key)
-{
+int connect(uint32_t ip_addr, uint32_t port, const char *key) {
 	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (socket_fd < 0) {
 		perror("socket");
@@ -112,8 +109,7 @@ int connect(uint32_t ip_addr, uint32_t port, const char *key)
 	return 0;
 }
 
-int start_read_thread()
-{
+int start_read_thread() {
 	data_mutex.lock();
 	read_thread_over = false;
 	game_over = false;
@@ -163,16 +159,14 @@ int start_read_thread()
 	return 0;
 }
 
-int finish_read_thread()
-{
+int finish_read_thread() {
 	read_thread_over = true;
 	read_thread_p->join();
 	delete read_thread_p;
 	return 0;
 }
 
-int wait_for_start()
-{
+int wait_for_start() {
 	char buf[16];
 	while (true) {
 		int ret = my_send("H");
@@ -212,24 +206,20 @@ int wait_for_start()
 	return 0;
 }
 
-int disconnect()
-{
+int disconnect() {
 	close(socket_fd);
 	return 0;
 }
 
-int get_map_size()
-{
+int get_map_size() {
 	return map_size;
 }
 
-int get_player_id()
-{
+int get_player_id() {
 	return player_id;
 }
 
-int get_server_data(char *buf)
-{
+int get_server_data(char *buf) {
 	data_mutex.lock();
 	if (game_over) {
 		return 2;
@@ -238,8 +228,7 @@ int get_server_data(char *buf)
 	return 0;
 }
 
-int send_operating(enum move_operating move_op, bool is_fire)
-{
+int send_operating(enum move_operating move_op, bool is_fire) {
 	char op[16];
 	char move = ' ';
 	char fire = is_fire ? 'v' : ' ';

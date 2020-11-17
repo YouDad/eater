@@ -13,8 +13,7 @@
 
 char buf[4096];
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	int socket_fd;
 
 	socket_fd = socket(AF_INET, SOCK_STREAM, 0);

@@ -1,8 +1,7 @@
 #include "modules/algorithm.h"
 #include "utils/assert.h"
 
-int main()
-{
+int main() {
 	char map1[] =
 		"[MAP A@ "
 		"12345"

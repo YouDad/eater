@@ -4,16 +4,14 @@
 /*
 	printf("%d, %d\n", result.first, result.second); \
  */
-#define test(map, size, id, move, is_fire) \
-{\
+#define test(map, size, id, move, is_fire) {\
 	class server_data data((char *)map, size, id);\
 	auto result = algorithm(data);\
 	assert(result.first == move);\
 	assert(result.second == is_fire);\
 }
 
-int main()
-{
+int main() {
 	test("[MAP qN "
 		"2522521012441202323345552"
 		"5541244022a00003233595514"

@@ -1,8 +1,7 @@
 #include "modules/map_parser.h"
 #include "utils/assert.h"
 
-int main()
-{
+int main() {
 	char map[] =
 		"[MAP A@ "
 		"12345"
