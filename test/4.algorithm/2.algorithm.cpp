@@ -1,13 +1,18 @@
 // Copyright 2020 <luwh0708@thundersoft.com>
 #include "modules/algorithm.h"
+#include "modules/draw.h"
 #include "utils/assert.h"
 
-/*
-	printf("%d, %d\n", result.first, result.second); \
- */
 #define test(map, size, id, move, is_fire) {\
 	class server_data data((char *)map, size, id);\
 	auto result = algorithm(data);\
+	if (result.first != move || result.second != is_fire) { \
+		for (int i = 0; i < size + 1; i++) { \
+			printf("\n"); \
+		} \
+		draw((char *)map, size, id); \
+		printf("%d, %d\n", result.first, result.second); \
+	} \
 	assert(result.first == move);\
 	assert(result.second == is_fire);\
 }
