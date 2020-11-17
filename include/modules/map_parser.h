@@ -1,5 +1,7 @@
+// Copyright 2020 <luwh0708@thundersoft.com>
 #ifndef MAP_PARSER_H_
 #define MAP_PARSER_H_
+
 #include <stdint.h>
 #include <vector>
 #include "types.h"
@@ -73,4 +75,5 @@ class server_data {
 		// 地图字符指针
 		char *_map;
 };
+
 #endif

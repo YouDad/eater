@@ -1,3 +1,7 @@
+// Copyright 2020 <luwh0708@thundersoft.com>
+#ifndef ASSERT_H_
+#define ASSERT_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -14,3 +18,5 @@ static inline void _assert(int cond, const char *str, const char *file, int line
 		exit(1);
 	}
 }
+
+#endif

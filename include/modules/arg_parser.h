@@ -1,3 +1,7 @@
+// Copyright 2020 <luwh0708@thundersoft.com>
+#ifndef ARG_PARSER_H_
+#define ARG_PARSER_H_
+
 #include <stdint.h>
 
 /* 解析命令行参数
@@ -42,3 +46,5 @@ int get_key(char *k);
 
 /* 从命令行中获得是否记录 */
 bool is_recording();
+
+#endif

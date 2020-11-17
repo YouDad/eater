@@ -1,3 +1,7 @@
+// Copyright 2020 <luwh0708@thundersoft.com>
+#ifndef NETWORK_H_
+#define NETWORK_H_
+
 #include <stdint.h>
 #include "types.h"
 
@@ -70,3 +74,5 @@ int get_server_data(char *buf);
  * - 1: 失败
  * */
 int send_operating(enum move_operating move_op, bool is_fire);
+
+#endif
