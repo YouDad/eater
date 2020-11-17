@@ -67,7 +67,9 @@ int evaluate(class server_data &m, double &score)
 			printf("set dist %d\n", get_pos(row, col));
 			return;
 		}
-		dist_graph[get_pos(row, col)] = dist;
+		if (dist_graph[get_pos(row, col)] > dist) {
+			dist_graph[get_pos(row, col)] = dist;
+		}
 	};
 
 	char dir = m.get(origin_row, origin_col);
@@ -94,9 +96,9 @@ int evaluate(class server_data &m, double &score)
 			if (tc < 0 || tc >= line_size) {
 				return;
 			}
-			have_value = have_value && move_dist <= get_dist(tr, tc);
+			have_value = have_value && (move_dist <= get_dist(tr, tc));
 #ifdef ALGORITHM_DEBUG_DIST
-			printf("have: %d\n", have_value);
+			printf("have: %d, %d <= %d\n", have_value, move_dist, get_dist(tr, tc));
 #endif
 			if (have_value) {
 				pq.push(qnode(tr, tc, dir, move_dist));
@@ -146,14 +148,17 @@ int evaluate(class server_data &m, double &score)
 			char ch = m.get(i, j);
 			switch (ch) {
 				case '1': case '2': case '3': case '4': case '5':
-					add_move_val(i, j, (ch - '0') * 1.0 / (get_dist(i, j) + 1));
+					add_move_val(i, j, (ch - '0') * 1.0 / (get_dist(i, j) + 0.45));
 					break;
 
 				case 'w': case 'a': case 's': case 'd':
-					if (i != origin_row || j != origin_col) {
+					if (i != origin_row && j != origin_col) {
 						for (int di = i - 2; di <= i + 2; di++) {
 							for (int dj = j - 2; dj <= j + 2; dj++) {
 								add_move_val(di, dj, -move_val[get_pos(di, dj)]);
+
+								char ch = m.get(di, dj);
+								add_move_val(di, dj, (ch - '0') * -1.0 / (get_dist(i, j) + 0.45));
 							}
 						}
 					}
@@ -195,11 +200,16 @@ int evaluate(class server_data &m, double &score)
 					for (int di = i - 3; di <= i + 3; di++) {
 						for (int dj = j - 3; dj <= j + 3; dj++) {
 							int dist = get_manhattan_dist(i, j, di, dj);
-							if (dist <= 3 && dist > 0) {
+							if (0 < dist && dist <= 3) {
 								char ch = m.get(di, dj);
-								add_move_val(di, dj, (ch - '0') * -1.0 / (get_dist(i, j) + 1));
-								add_move_val(di, dj, -25.0 / dist);
+								add_move_val(di, dj, (ch - '0') * -1.0 / (get_dist(i, j) + 0.45));
 							}
+						}
+					}
+					{
+						int dist = get_manhattan_dist(i, j, origin_row, origin_col);
+						if (dist <= 3) {
+							add_move_val(i, j, -25.0 / dist);
 						}
 					}
 					break;
@@ -270,7 +280,11 @@ static pair<mop_t, bool> normal_algorithm(class server_data &m, vector<pair<mop_
 			}
 		}
 
-		sp += score * 1.0;
+		if (score > 0) {
+			sp += score * 2.5;
+		} else {
+			sp += score * 1.0;
+		}
 		if (max_sp < sp) {
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 			printf("update!\n");
@@ -419,7 +433,7 @@ static vector<pair<mop_t, bool>> special_algorithm(class server_data &m)
 		for (int dc = -2; dc <= 2; dc++) {
 			// 曼哈顿距离[1, 2]
 			int dist = abs(dr) + abs(dc);
-			if (dist < 1 || dist > 2) {
+			if (dist == 0 || dist > 2) {
 				continue;
 			}
 
