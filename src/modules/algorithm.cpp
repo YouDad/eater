@@ -23,7 +23,16 @@ using std::make_pair;
 typedef enum move_operating mop_t;
 typedef pair<mop_t, bool> op_t;
 typedef vector<op_t> ops_t;
-typedef ops_t(* special_func_t)(class server_data &m, int dr, int dc, char ch);
+
+typedef struct special_judge {
+	mop_t move_op;
+	bool is_fire;
+	double trend;
+} spjdg_t;
+typedef vector<spjdg_t> spjdgs_t;
+
+typedef spjdgs_t(* special_func_t)(class server_data &m,
+		int dr, int dc, char ch);
 
 static bool is_wall(char ch) {
 	return ch == '9';
@@ -178,7 +187,6 @@ int evaluate(class server_data &m, double &score) {
 	};
 
 	auto add_move_val = [&](int row, int col, double val) -> void {
-
 #ifdef ALGORITHM_DEBUG_ADD_VAL
 		printf("set move (%d, %d) += %lf\n", row, col, val);
 #endif
@@ -320,7 +328,7 @@ int evaluate(class server_data &m, double &score) {
 	return 0;
 }
 
-static op_t normal_algorithm(class server_data &m, ops_t &dops, ops_t &rops) {
+static op_t normal_algorithm(class server_data &m, spjdgs_t &spjdg_ops) {
 	const int old_score = m.get_my_score();
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 	for (int i = 0; i < dops.size(); i++) {
@@ -334,22 +342,17 @@ static op_t normal_algorithm(class server_data &m, ops_t &dops, ops_t &rops) {
 	// sp: situation point 局势分
 	// s: score
 	auto update = [&](int s, double sp, mop_t move_op, bool is_fire) -> void {
-		// skip dangerous operating
-		for (int i = 0; i < dops.size(); i++) {
-			if (dops[i].first == move_op && dops[i].second == is_fire) {
-#ifdef ALGORITHM_DEBUG_ALGORITHM
-				printf("skip!\n");
-#endif
-				return;
-			}
-		}
+		for (int i = 0; i < spjdg_ops.size(); i++) {
+			bool is_same_action = true;
+			is_same_action = is_same_action && spjdg_ops[i].move_op == move_op;
+			is_same_action = is_same_action && spjdg_ops[i].is_fire == is_fire;
 
-		for (int i = 0; i < rops.size(); i++) {
-			if (rops[i].first == move_op && rops[i].second == is_fire) {
+			if (is_same_action) {
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 				printf("recommand!\n");
 #endif
-				sp += 100;
+
+				sp += spjdg_ops[i].trend;
 			}
 		}
 
@@ -358,10 +361,12 @@ static op_t normal_algorithm(class server_data &m, ops_t &dops, ops_t &rops) {
 		} else {
 			sp += s * 1.0;
 		}
+
 		if (max_sp < sp) {
 #ifdef ALGORITHM_DEBUG_ALGORITHM
 			printf("update!\n");
 #endif
+
 			max_sp = sp;
 			optimal_move_op = move_op;
 			optimal_is_fire = is_fire;
@@ -424,10 +429,11 @@ struct strategy {
 	char player;  // 0 for any
 	mop_t move;
 	bool is_fire;
+	double trend;
 };
 
 static void exec_strategys(struct strategy *strategys, int len,
-		ops_t &ops, class server_data &m, int dr, int dc) {
+		spjdgs_t &ops, class server_data &m, int dr, int dc) {
 	int r, c;
 	m.get_my_pos(r, c);
 	char we = m.get(r, c);
@@ -454,187 +460,421 @@ static void exec_strategys(struct strategy *strategys, int len,
 			continue;
 		}
 
-		ops.push_back(make_pair(s.move, s.is_fire));
+		ops.push_back(spjdg_t{s.move, s.is_fire, s.trend});
 	}
 }
 
-static ops_t process_player_danger(class server_data &m, int dr, int dc) {
-	ops_t dangerous_ops;
-	int r, c;
-	m.get_my_pos(r, c);
+struct strategy player_strategys[] = {
+/*
+       6
+     7 3 a
+   8 4 1 b c
+ 9 5 2 w d e f
+   g h i j k
+     l m n
+	   o
+*/
+// 1: v
+// 2: w, wv
+// 3: s(v), !s(-w, -wv)
+// 4: -w, -wv, -a, -av
+// 5: w, wv
+// 6: -w, -wv
+// 7: -a, -av
+// 8: -w, -wv
+// 9: -a, -av
+// a: -d, -dv
+// b: -d, -dv, -w, -wv
+// c: -w, -wv
+// d: w, wv
+// e: w, wv
+// f: -d, -dv
+// g: -s, -sv
+// h: -s, -sv, -a, -av
+// i: sv
+// j: -s, -sv, -d, -dv
+// k: -s, -sv
+// l: -a, -av
+// m: w(w, wv), !w(-s, -sv)
+// n: -d, -dv
+// o: -s, -sv
 
-	char player = m.get(r + dr, c + dc);
-	char we = m.get(r, c);
+// 1: v
+	{ -1,  0,  'w',    0, move_op_stay,  true,  +200, },
+	{ +1,  0,  's',    0, move_op_stay,  true,  +200, },
+	{  0, -1,  'a',    0, move_op_stay,  true,  +200, },
+	{  0, +1,  'd',    0, move_op_stay,  true,  +200, },
 
-	// 相邻
-	if (abs(dr) + abs(dc) == 1) {
-		if (abs(dr)) {
-			dangerous_ops.push_back(make_pair(move_op_up, false));
-			dangerous_ops.push_back(make_pair(move_op_down, false));
-		}
+// 2: w, wv
+	{  0, -1,  'w',    0, move_op_up,    false, +200, },
+	{  0, +1,  's',    0, move_op_down,  false, +200, },
+	{ +1,  0,  'a',    0, move_op_left,  false, +200, },
+	{ -1,  0,  'd',    0, move_op_right, false, +200, },
 
-		if (abs(dc)) {
-			dangerous_ops.push_back(make_pair(move_op_left, false));
-			dangerous_ops.push_back(make_pair(move_op_right, false));
-		}
-	}
+	{  0, -1,  'w',    0, move_op_up,    true,  +200, },
+	{  0, +1,  's',    0, move_op_down,  true,  +200, },
+	{ +1,  0,  'a',    0, move_op_left,  true,  +200, },
+	{ -1,  0,  'd',    0, move_op_right, true,  +200, },
 
-	// 隔一格
-	if (abs(dr) == 2 || abs(dc) == 2) {
-		bool facing = false;
-		facing |= we == 'w' && dr == -2;
-		facing |= we == 's' && dr == 2;
-		facing |= we == 'a' && dc == -2;
-		facing |= we == 'd' && dc == 2;
+// 3: s(v), !s(-w, -wv)
+	{ -2,  0,  'w',  's', move_op_stay,  true,  +200, },
+	{ +2,  0,  's',  's', move_op_stay,  true,  +200, },
+	{  0, -2,  'a',  's', move_op_stay,  true,  +200, },
+	{  0, +2,  'd',  's', move_op_stay,  true,  +200, },
 
-		facing |= we == 'w' && dr == 2  && player == we;
-		facing |= we == 's' && dr == -2 && player == we;
-		facing |= we == 'a' && dc == 2  && player == we;
-		facing |= we == 'd' && dc == -2 && player == we;
+	{ -2,  0,  'w', -'s', move_op_up,    false, -200, },
+	{ +2,  0,  's', -'s', move_op_down,  false, -200, },
+	{  0, -2,  'a', -'s', move_op_left,  false, -200, },
+	{  0, +2,  'd', -'s', move_op_right, false, -200, },
 
-		if (facing) {
-			dangerous_ops.push_back(make_pair(move_op_stay, false));
-			dangerous_ops.push_back(make_pair(move_op_up, false));
-			dangerous_ops.push_back(make_pair(move_op_down, false));
-			dangerous_ops.push_back(make_pair(move_op_left, false));
-			dangerous_ops.push_back(make_pair(move_op_right, false));
-		}
+	{ -2,  0,  'w', -'s', move_op_up,    true,  -200, },
+	{ +2,  0,  's', -'s', move_op_down,  true,  -200, },
+	{  0, -2,  'a', -'s', move_op_left,  true,  -200, },
+	{  0, +2,  'd', -'s', move_op_right, true,  -200, },
 
-		bool facing_each_other = false;
-		if (we == 'w' && dr == -2 && player == 's') {
-			dangerous_ops.push_back(make_pair(move_op_up, true));
-		}
-		if (we == 's' && dr == 2 && player == 'w') {
-			dangerous_ops.push_back(make_pair(move_op_down, true));
-		}
-		if (we == 'a' && dc == -2 && player == 'd') {
-			dangerous_ops.push_back(make_pair(move_op_left, true));
-		}
-		if (we == 'd' && dc == 2 && player == 'a') {
-			dangerous_ops.push_back(make_pair(move_op_right, true));
-		}
-	}
+// 4: -w, -wv, -a, -av
+	{ -1, -1,  'w',    0, move_op_up,    false, -200, },
+	{ +1, +1,  's',    0, move_op_down,  false, -200, },
+	{ +1, -1,  'a',    0, move_op_left,  false, -200, },
+	{ -1, +1,  'd',    0, move_op_right, false, -200, },
 
-	// 对角线
-	if (abs(dr) == 1 && abs(dc) == 1) {
-		auto vertical_op = make_pair(move_op_down, false);
-		if (dr < 0) {
-			vertical_op.first = move_op_up;
-		}
-		dangerous_ops.push_back(vertical_op);
+	{ -1, -1,  'w',    0, move_op_up,    true,  -200, },
+	{ +1, +1,  's',    0, move_op_down,  true,  -200, },
+	{ +1, -1,  'a',    0, move_op_left,  true,  -200, },
+	{ -1, +1,  'd',    0, move_op_right, true,  -200, },
 
-		auto horizontal_op = make_pair(move_op_right, false);
-		if (dc < 0) {
-			horizontal_op.first = move_op_left;
-		}
-		dangerous_ops.push_back(horizontal_op);
-	}
+	{ -1, -1,  'w',    0, move_op_left,  false, -200, },
+	{ +1, +1,  's',    0, move_op_right, false, -200, },
+	{ +1, -1,  'a',    0, move_op_down,  false, -200, },
+	{ -1, +1,  'd',    0, move_op_up,    false, -200, },
 
-	return dangerous_ops;
-}
+	{ -1, -1,  'w',    0, move_op_left,  true,  -200, },
+	{ +1, +1,  's',    0, move_op_right, true,  -200, },
+	{ +1, -1,  'a',    0, move_op_down,  true,  -200, },
+	{ -1, +1,  'd',    0, move_op_up,    true,  -200, },
 
-static ops_t process_player_recommand(class server_data &m, int dr, int dc) {
-	ops_t recommand_ops;
+// 5: w, wv
+	{  0, -2,  'w',    0, move_op_up,    false, +200, },
+	{  0, +2,  's',    0, move_op_down,  false, +200, },
+	{ +2,  0,  'a',    0, move_op_left,  false, +200, },
+	{ -2,  0,  'd',    0, move_op_right, false, +200, },
 
-	struct strategy strategys[] = {
-	// 相邻
-		{ -1,  0, -'w', 0, move_op_up,    true, },
-		{ -1,  0,  'w', 0, move_op_stay,  true, },
-		{ +1,  0, -'s', 0, move_op_down,  true, },
-		{ +1,  0,  's', 0, move_op_stay,  true, },
-		{  0, -1, -'a', 0, move_op_left,  true, },
-		{  0, -1,  'a', 0, move_op_stay,  true, },
-		{  0, +1, -'d', 0, move_op_right, true, },
-		{  0, +1,  'd', 0, move_op_stay,  true, },
-	// 隔一格
-		{ -2,  0,  'w', 0, move_op_stay,  true, },
-		{ +2,  0,  'w', 0, move_op_down,  true, },
-		{ -2,  0,  's', 0, move_op_up,    true, },
-		{ +2,  0,  's', 0, move_op_stay,  true, },
-		{  0, -2,  'a', 0, move_op_stay,  true, },
-		{  0, +2,  'a', 0, move_op_right, true, },
-		{  0, -2,  'd', 0, move_op_left,  true, },
-		{  0, +2,  'd', 0, move_op_stay,  true, },
-	// 对角线
-		{ +1, +1,    0, 0, move_op_up,    false, },
-		{ +1, +1,    0, 0, move_op_left,  false, },
-		{ -1, +1,    0, 0, move_op_down,  false, },
-		{ -1, +1,    0, 0, move_op_left,  false, },
-		{ +1, -1,    0, 0, move_op_right, false, },
-		{ +1, -1,    0, 0, move_op_up,    false, },
-		{ -1, -1,    0, 0, move_op_right, false, },
-		{ -1, -1,    0, 0, move_op_down,  false, },
-	};
+	{  0, -2,  'w',    0, move_op_up,    true,  +200, },
+	{  0, +2,  's',    0, move_op_down,  true,  +200, },
+	{ +2,  0,  'a',    0, move_op_left,  true,  +200, },
+	{ -2,  0,  'd',    0, move_op_right, true,  +200, },
 
-	int len = sizeof(strategys) / sizeof(*strategys);
-	exec_strategys(strategys, len, recommand_ops, m, dr, dc);
+// 6: -w, -wv
+	{ -3,  0,  'w',    0, move_op_up,    false, -200, },
+	{ +3,  0,  's',    0, move_op_down,  false, -200, },
+	{  0, -3,  'a',    0, move_op_left,  false, -200, },
+	{  0, +3,  'd',    0, move_op_right, false, -200, },
 
-	return recommand_ops;
-}
+	{ -3,  0,  'w',    0, move_op_up,    true,  -200, },
+	{ +3,  0,  's',    0, move_op_down,  true,  -200, },
+	{  0, -3,  'a',    0, move_op_left,  true,  -200, },
+	{  0, +3,  'd',    0, move_op_right, true,  -200, },
 
-static ops_t process_ghost_danger(class server_data &m, int dr, int dc) {
-	ops_t dangerous_ops;
+// 7: -a, -av
+	{ -2, -1,  'w',    0, move_op_left,  false, -200, },
+	{ +2, +1,  's',    0, move_op_right, false, -200, },
+	{ +1, -2,  'a',    0, move_op_down,  false, -200, },
+	{ -1, +2,  'd',    0, move_op_up,    false, -200, },
 
-	if (dr != 0) {
-		auto op = make_pair(move_op_down, false);
+	{ -2, -1,  'w',    0, move_op_left,  true,  -200, },
+	{ +2, +1,  's',    0, move_op_right, true,  -200, },
+	{ +1, -2,  'a',    0, move_op_down,  true,  -200, },
+	{ -1, +2,  'd',    0, move_op_up,    true,  -200, },
 
-		if (dr < 0) {
-			op.first = move_op_up;
-		}
+// 8: -w, -wv
+	{ -1, -2,  'w',    0, move_op_up,    false, -200, },
+	{ +1, +2,  's',    0, move_op_down,  false, -200, },
+	{ +2, -1,  'a',    0, move_op_left,  false, -200, },
+	{ -2, +1,  'd',    0, move_op_right, false, -200, },
 
-		dangerous_ops.push_back(op);
-	}
+	{ -1, -2,  'w',    0, move_op_up,    true,  -200, },
+	{ +1, +2,  's',    0, move_op_down,  true,  -200, },
+	{ +2, -1,  'a',    0, move_op_left,  true,  -200, },
+	{ -2, +1,  'd',    0, move_op_right, true,  -200, },
 
-	if (dc != 0) {
-		auto op = make_pair(move_op_right, false);
+// 9: -a, -av
+	{  0, -3,  'w',    0, move_op_left,  false, -200, },
+	{  0, +3,  's',    0, move_op_right, false, -200, },
+	{ -3,  0,  'a',    0, move_op_up,    false, -200, },
+	{ +3,  0,  'd',    0, move_op_down,  false, -200, },
 
-		if (dc < 0) {
-			op.first = move_op_left;
-		}
+	{  0, -3,  'w',    0, move_op_left,  true,  -200, },
+	{  0, +3,  's',    0, move_op_right, true,  -200, },
+	{ -3,  0,  'a',    0, move_op_up,    true,  -200, },
+	{ +3,  0,  'd',    0, move_op_down,  true,  -200, },
 
-		dangerous_ops.push_back(op);
-	}
+// a: -d, -dv
+	{ -2, +1,  'w',    0, move_op_right, false, -200, },
+	{ +2, -1,  's',    0, move_op_left,  false, -200, },
+	{ -1, -2,  'a',    0, move_op_up,    false, -200, },
+	{ +1, +2,  'd',    0, move_op_down,  false, -200, },
 
-	return dangerous_ops;
-}
+	{ -2, +1,  'w',    0, move_op_right, true,  -200, },
+	{ +2, -1,  's',    0, move_op_left,  true,  -200, },
+	{ -1, -2,  'a',    0, move_op_up,    true,  -200, },
+	{ +1, +2,  'd',    0, move_op_down,  true,  -200, },
 
-static ops_t process_ghost_recommand(class server_data &m, int dr, int dc) {
-	ops_t recommand_ops;
-	int r, c;
-	m.get_my_pos(r, c);
+// b: -d, -dv, -w, -wv
+	{ -1, +1,  'w',    0, move_op_right, false, -200, },
+	{ +1, -1,  's',    0, move_op_left,  false, -200, },
+	{ -1, -1,  'a',    0, move_op_up,    false, -200, },
+	{ +1, +1,  'd',    0, move_op_down,  false, -200, },
 
-	if (dr == 2 && dc == 0) {
-		auto op = make_pair(move_op_down, true);
+	{ -1, +1,  'w',    0, move_op_right, true,  -200, },
+	{ +1, -1,  's',    0, move_op_left,  true,  -200, },
+	{ -1, -1,  'a',    0, move_op_up,    true,  -200, },
+	{ +1, +1,  'd',    0, move_op_down,  true,  -200, },
 
-		if (dr < 0) {
-			op.first = move_op_up;
-		}
+	{ -1, +1,  'w',    0, move_op_up,    false, -200, },
+	{ +1, -1,  's',    0, move_op_down,  false, -200, },
+	{ -1, -1,  'a',    0, move_op_left,  false, -200, },
+	{ +1, +1,  'd',    0, move_op_right, false, -200, },
 
-		recommand_ops.push_back(op);
-	}
+	{ -1, +1,  'w',    0, move_op_up,    true,  -200, },
+	{ +1, -1,  's',    0, move_op_down,  true,  -200, },
+	{ -1, -1,  'a',    0, move_op_left,  true,  -200, },
+	{ +1, +1,  'd',    0, move_op_right, true,  -200, },
 
-	if (0 < dc && dc <= 2) {
-		auto op = make_pair(move_op_right, true);
+// c: -w, -wv
+	{ -1, +2,  'w',    0, move_op_up,    false, -200, },
+	{ +1, -2,  's',    0, move_op_down,  false, -200, },
+	{ -2, -1,  'a',    0, move_op_left,  false, -200, },
+	{ +2, +1,  'd',    0, move_op_right, false, -200, },
 
-		if (m.get(r, c) == 'd') {
-			op.first = move_op_stay;
-		}
+	{ -1, +2,  'w',    0, move_op_up,    true,  -200, },
+	{ +1, -2,  's',    0, move_op_down,  true,  -200, },
+	{ -2, -1,  'a',    0, move_op_left,  true,  -200, },
+	{ +2, +1,  'd',    0, move_op_right, true,  -200, },
 
-		recommand_ops.push_back(op);
-	}
+// d: w, wv
+	{  0, +1,  'w',    0, move_op_up,    false, +200, },
+	{  0, -1,  's',    0, move_op_down,  false, +200, },
+	{  -1, 0,  'a',    0, move_op_left,  false, +200, },
+	{  +1, 0,  'd',    0, move_op_right, false, +200, },
 
-	if (0 > dc && dc >= -2) {
-		auto op = make_pair(move_op_left, true);
+	{  0, +1,  'w',    0, move_op_up,    true,  +200, },
+	{  0, -1,  's',    0, move_op_down,  true,  +200, },
+	{  -1, 0,  'a',    0, move_op_left,  true,  +200, },
+	{  +1, 0,  'd',    0, move_op_right, true,  +200, },
 
-		if (m.get(r, c) == 'a') {
-			op.first = move_op_stay;
-		}
+// e: w, wv
+	{  0, +2,  'w',    0, move_op_up,    false, +200, },
+	{  0, -2,  's',    0, move_op_down,  false, +200, },
+	{  -2, 0,  'a',    0, move_op_left,  false, +200, },
+	{  +2, 0,  'd',    0, move_op_right, false, +200, },
 
-		recommand_ops.push_back(op);
-	}
+	{  0, +2,  'w',    0, move_op_up,    true,  +200, },
+	{  0, -2,  's',    0, move_op_down,  true,  +200, },
+	{  -2, 0,  'a',    0, move_op_left,  true,  +200, },
+	{  +2, 0,  'd',    0, move_op_right, true,  +200, },
 
-	return recommand_ops;
-}
+// f: -d, -dv
+	{  0, +3,  'w',    0, move_op_right, false, -200, },
+	{  0, -3,  's',    0, move_op_left,  false, -200, },
+	{  -3, 0,  'a',    0, move_op_up,    false, -200, },
+	{  +3, 0,  'd',    0, move_op_down,  false, -200, },
+
+	{  0, +3,  'w',    0, move_op_right, true,  -200, },
+	{  0, -3,  's',    0, move_op_left,  true,  -200, },
+	{  -3, 0,  'a',    0, move_op_up,    true,  -200, },
+	{  +3, 0,  'd',    0, move_op_down,  true,  -200, },
+
+// g: -s, -sv
+	{ +1, -2,  'w',    0, move_op_down,  false, -200, },
+	{ -1, +2,  's',    0, move_op_up,    false, -200, },
+	{ +2, +1,  'a',    0, move_op_right, false, -200, },
+	{ -2, -1,  'd',    0, move_op_left,  false, -200, },
+
+	{ +1, -2,  'w',    0, move_op_down,  true,  -200, },
+	{ -1, +2,  's',    0, move_op_up,    true,  -200, },
+	{ +2, +1,  'a',    0, move_op_right, true,  -200, },
+	{ -2, -1,  'd',    0, move_op_left,  true,  -200, },
+
+// h: -s, -sv, -a, -av
+	{ +1, -1,  'w',    0, move_op_down,  false, -200, },
+	{ -1, +1,  's',    0, move_op_up,    false, -200, },
+	{ +1, +1,  'a',    0, move_op_right, false, -200, },
+	{ -1, -1,  'd',    0, move_op_left,  false, -200, },
+
+	{ +1, -1,  'w',    0, move_op_down,  true,  -200, },
+	{ -1, +1,  's',    0, move_op_up,    true,  -200, },
+	{ +1, +1,  'a',    0, move_op_right, true,  -200, },
+	{ -1, -1,  'd',    0, move_op_left,  true,  -200, },
+
+	{ +1, -1,  'w',    0, move_op_left,  false, -200, },
+	{ -1, +1,  's',    0, move_op_right, false, -200, },
+	{ +1, +1,  'a',    0, move_op_down,  false, -200, },
+	{ -1, -1,  'd',    0, move_op_up,    false, -200, },
+
+	{ +1, -1,  'w',    0, move_op_left,  true,  -200, },
+	{ -1, +1,  's',    0, move_op_right, true,  -200, },
+	{ +1, +1,  'a',    0, move_op_down,  true,  -200, },
+	{ -1, -1,  'd',    0, move_op_up,    true,  -200, },
+
+// i: sv
+	{ +1,  0,  'w',    0, move_op_down,  true,  +200, },
+	{ -1,  0,  's',    0, move_op_up,    true,  +200, },
+	{  0, +1,  'a',    0, move_op_right, true,  +200, },
+	{  0, -1,  'd',    0, move_op_left,  true,  +200, },
+
+// j: -s, -sv, -d, -dv
+	{ +1, +1,  'w',    0, move_op_down,  false, -200, },
+	{ -1, -1,  's',    0, move_op_up,    false, -200, },
+	{ -1, +1,  'a',    0, move_op_right, false, -200, },
+	{ +1, -1,  'd',    0, move_op_left,  false, -200, },
+
+	{ +1, +1,  'w',    0, move_op_down,  true,  -200, },
+	{ -1, -1,  's',    0, move_op_up,    true,  -200, },
+	{ -1, +1,  'a',    0, move_op_right, true,  -200, },
+	{ +1, -1,  'd',    0, move_op_left,  true,  -200, },
+
+	{ +1, +1,  'w',    0, move_op_right, false, -200, },
+	{ -1, -1,  's',    0, move_op_left,  false, -200, },
+	{ -1, +1,  'a',    0, move_op_up,    false, -200, },
+	{ +1, -1,  'd',    0, move_op_down,  false, -200, },
+
+	{ +1, +1,  'w',    0, move_op_right, true,  -200, },
+	{ -1, -1,  's',    0, move_op_left,  true,  -200, },
+	{ -1, +1,  'a',    0, move_op_up,    true,  -200, },
+	{ +1, -1,  'd',    0, move_op_down,  true,  -200, },
+
+// k: -s, -sv
+	{ +1, +2,  'w',    0, move_op_down,  false, -200, },
+	{ -1, -2,  's',    0, move_op_up,    false, -200, },
+	{ -2, +1,  'a',    0, move_op_right, false, -200, },
+	{ +2, -1,  'd',    0, move_op_left,  false, -200, },
+
+	{ +1, +2,  'w',    0, move_op_down,  true,  -200, },
+	{ -1, -2,  's',    0, move_op_up,    true,  -200, },
+	{ -2, +1,  'a',    0, move_op_right, true,  -200, },
+	{ +2, -1,  'd',    0, move_op_left,  true,  -200, },
+
+// l: -a, -av
+	{ +2, -1,  'w',    0, move_op_left,  false, -200, },
+	{ -2, +1,  's',    0, move_op_right, false, -200, },
+	{ +1, +2,  'a',    0, move_op_down,  false, -200, },
+	{ -1, -2,  'd',    0, move_op_up,    false, -200, },
+
+	{ +2, -1,  'w',    0, move_op_left,  true,  -200, },
+	{ -2, +1,  's',    0, move_op_right, true,  -200, },
+	{ +1, +2,  'a',    0, move_op_down,  true,  -200, },
+	{ -1, -2,  'd',    0, move_op_up,    true,  -200, },
+
+// m: w(w, wv), !w(-s, -sv)
+	{ +2,  0,  'w',  'w', move_op_up,    false, +200, },
+	{ -2,  0,  's',  'w', move_op_down,  false, +200, },
+	{  0, +2,  'a',  'w', move_op_left,  false, +200, },
+	{  0, -2,  'd',  'w', move_op_right, false, +200, },
+
+	{ +2,  0,  'w',  'w', move_op_up,    true,  +200, },
+	{ -2,  0,  's',  'w', move_op_down,  true,  +200, },
+	{  0, +2,  'a',  'w', move_op_left,  true,  +200, },
+	{  0, -2,  'd',  'w', move_op_right, true,  +200, },
+
+	{ +2,  0,  'w', -'w', move_op_down,  false, -200, },
+	{ -2,  0,  's', -'w', move_op_up,    false, -200, },
+	{ 0,  +2,  'a', -'w', move_op_right, false, -200, },
+	{ 0,  -2,  'd', -'w', move_op_left,  false, -200, },
+
+	{ +2,  0,  'w', -'w', move_op_down,  true,  -200, },
+	{ -2,  0,  's', -'w', move_op_up,    true,  -200, },
+	{ 0,  +2,  'a', -'w', move_op_right, true,  -200, },
+	{ 0,  -2,  'd', -'w', move_op_left,  true,  -200, },
+
+// n: -d, -dv
+	{ +2, +1,  'w',    0, move_op_right, false, -200, },
+	{ -2, -1,  's',    0, move_op_left,  false, -200, },
+	{ -1, +2,  'a',    0, move_op_up,    false, -200, },
+	{ +1, -2,  'd',    0, move_op_down,  false, -200, },
+
+	{ +2, +1,  'w',    0, move_op_right, true,  -200, },
+	{ -2, -1,  's',    0, move_op_left,  true,  -200, },
+	{ -1, +2,  'a',    0, move_op_up,    true,  -200, },
+	{ +1, -2,  'd',    0, move_op_down,  true,  -200, },
+
+// o: -s, -sv
+	{ +3,  0,  'w',    0, move_op_down,  false, -200, },
+	{ -3,  0,  's',    0, move_op_up,    false, -200, },
+	{ 0,  +3,  'a',    0, move_op_right, false, -200, },
+	{ 0,  -3,  'd',    0, move_op_left,  false, -200, },
+
+	{ +3,  0,  'w',    0, move_op_down,  true,  -200, },
+	{ -3,  0,  's',    0, move_op_up,    true,  -200, },
+	{ 0,  +3,  'a',    0, move_op_right, true,  -200, },
+	{ 0,  -3,  'd',    0, move_op_left,  true,  -200, },
+};
+
+struct strategy ghost_strategys[] = {
+// 相邻
+	// 不动射击
+	{ -1,  0,  'w', 'G', move_op_stay,  true, 200, },
+	{ +1,  0,  's', 'G', move_op_stay,  true, 200, },
+	{  0, -1,  'a', 'G', move_op_stay,  true, 200, },
+	{  0, +1,  'd', 'G', move_op_stay,  true, 200, },
+	// 转向射击
+	{ -1,  0, -'w', 'G', move_op_up,    true, 200, },
+	{ +1,  0, -'s', 'G', move_op_down,  true, 200, },
+	{  0, -1, -'a', 'G', move_op_left,  true, 200, },
+	{  0, +1, -'d', 'G', move_op_right, true, 200, },
+	// 惩罚：移动到幽灵上
+	{ -1,  0,  'w', 'G', move_op_up,    false, -200, },
+	{ +1,  0,  's', 'G', move_op_down,  false, -200, },
+	{ 0,  -1,  'a', 'G', move_op_left,  false, -200, },
+	{ 0,  +1,  'd', 'G', move_op_right, false, -200, },
+	{ -1,  0,  'w', 'G', move_op_up,    true,  -200, },
+	{ +1,  0,  's', 'G', move_op_down,  true,  -200, },
+	{ 0,  -1,  'a', 'G', move_op_left,  true,  -200, },
+	{ 0,  +1,  'd', 'G', move_op_right, true,  -200, },
+// 隔一格
+	// 不动射击
+	{ -2,  0,  'w', 'G', move_op_stay,  true, 100, },
+	{ +2,  0,  's', 'G', move_op_stay,  true, 100, },
+	{  0, -2,  'a', 'G', move_op_stay,  true, 100, },
+	{  0, +2,  'd', 'G', move_op_stay,  true, 100, },
+	// 移动射击
+	{ -2,  0,  'w', 'G', move_op_up,    true, 100, },
+	{ +2,  0,  's', 'G', move_op_down,  true, 100, },
+	{  0, -2,  'a', 'G', move_op_left,  true, 100, },
+	{  0, +2,  'd', 'G', move_op_right, true, 100, },
+	// 转向射击
+	{ -2,  0, -'w', 'G', move_op_up,    true, 100, },
+	{ +2,  0, -'s', 'G', move_op_down,  true, 100, },
+	{  0, -2, -'a', 'G', move_op_left,  true, 100, },
+	{  0, +2, -'d', 'G', move_op_right, true, 100, },
+// 对角线
+	// 转向水平射击
+	{ -1, -1, -'a', 'G', move_op_left,  true, 50,  },
+	{ +1, -1, -'a', 'G', move_op_left,  true, 50,  },
+	{ -1, +1, -'d', 'G', move_op_right, true, 50,  },
+	{ +1, +1, -'d', 'G', move_op_right, true, 50,  },
+	// 不动射击
+	{ -1, -1,  'a', 'G', move_op_stay,  true, 50,  },
+	{ +1, -1,  'a', 'G', move_op_stay,  true, 50,  },
+	{ -1, +1,  'd', 'G', move_op_stay,  true, 50,  },
+	{ +1, +1,  'd', 'G', move_op_stay,  true, 50,  },
+	// 惩罚：移动到幽灵攻击范围里
+	{ -1, -1,  'a', 'G', move_op_left,  false, -50,  },
+	{ -1, -1,  'w', 'G', move_op_up,    false, -50,  },
+	{ +1, -1,  'a', 'G', move_op_left,  false, -50,  },
+	{ +1, -1,  's', 'G', move_op_down,  false, -50,  },
+	{ -1, +1,  'd', 'G', move_op_right, false, -50,  },
+	{ -1, +1,  'w', 'G', move_op_up,    false, -50,  },
+	{ +1, +1,  'd', 'G', move_op_right, false, -50,  },
+	{ +1, +1,  's', 'G', move_op_down,  false, -50,  },
+	{ -1, -1,  'a', 'G', move_op_left,  true,  -50,  },
+	{ -1, -1,  'w', 'G', move_op_up,    true,  -50,  },
+	{ +1, -1,  'a', 'G', move_op_left,  true,  -50,  },
+	{ +1, -1,  's', 'G', move_op_down,  true,  -50,  },
+	{ -1, +1,  'd', 'G', move_op_right, true,  -50,  },
+	{ -1, +1,  'w', 'G', move_op_up,    true,  -50,  },
+	{ +1, +1,  'd', 'G', move_op_right, true,  -50,  },
+	{ +1, +1,  's', 'G', move_op_down,  true,  -50,  },
+};
 
 static bool dist_bound_check_pass(class server_data &m,
 		int r, int c, int dr, int dc, int min_dist, int max_dist) {
@@ -657,9 +897,8 @@ static bool dist_bound_check_pass(class server_data &m,
 
 // dmin: min dist
 // dmax: max dist
-static ops_t special_algorithm(class server_data &m,
-		int dmin, int dmax, special_func_t func) {
-	ops_t special_ops;
+static spjdgs_t special_algorithm(class server_data &m, int dmin, int dmax) {
+	spjdgs_t special_ops;
 
 	int r, c;
 	m.get_my_pos(r, c);
@@ -672,9 +911,17 @@ static ops_t special_algorithm(class server_data &m,
 			}
 
 			char ch = m.get(r + dr, c + dc);
-			auto ret = func(m, dr, dc, ch);
-			for (int i = 0; i < ret.size(); i++) {
-				special_ops.push_back(ret[i]);
+
+			if (is_ghost(ch)) {
+				auto& s = ghost_strategys;
+				int len = sizeof(s) / sizeof(*s);
+				exec_strategys(s, len, special_ops, m, dr, dc);
+			}
+
+			if (is_player(ch)) {
+				auto& s = player_strategys;
+				int len = sizeof(s) / sizeof(*s);
+				exec_strategys(s, len, special_ops, m, dr, dc);
 			}
 		}
 	}
@@ -683,47 +930,9 @@ static ops_t special_algorithm(class server_data &m,
 }
 
 op_t algorithm(class server_data &m) {
-	auto dangerous_ops = special_algorithm(m, 1, 2, [](class server_data &m,
-				int dr, int dc, char ch) -> ops_t {
-		ops_t ops, ret;
+	auto spjdg_ops = special_algorithm(m, 1, 3);
 
-		if (is_ghost(ch)) {
-			ret = process_ghost_danger(m, dr, dc);
-			for (int i = 0; i < ret.size(); i++) {
-				ops.push_back(ret[i]);
-			}
-		}
-
-		if (is_player(ch)) {
-			ret = process_player_danger(m, dr, dc);
-			for (int i = 0; i < ret.size(); i++) {
-				ops.push_back(ret[i]);
-			}
-		}
-		return ops;
-	});
-
-	auto recommand_ops = special_algorithm(m, 1, 2, [](class server_data &m,
-				int dr, int dc, char ch) -> ops_t {
-		ops_t ops, ret;
-
-		if (is_ghost(ch)) {
-			ret = process_ghost_recommand(m, dr, dc);
-			for (int i = 0; i < ret.size(); i++) {
-				ops.push_back(ret[i]);
-			}
-		}
-
-		if (is_player(ch)) {
-			ret = process_player_recommand(m, dr, dc);
-			for (int i = 0; i < ret.size(); i++) {
-				ops.push_back(ret[i]);
-			}
-		}
-		return ops;
-	});
-
-	auto ret = normal_algorithm(m, dangerous_ops, recommand_ops);
+	auto ret = normal_algorithm(m, spjdg_ops);
 
 	return ret;
 }
