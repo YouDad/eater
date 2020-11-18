@@ -216,76 +216,6 @@ int evaluate(class server_data &m, double &score) {
 			if (is_fruit(ch)) {
 				add_move_val(r, c, get_fruit_val(r, c));
 			}
-
-			if (is_player(ch)) {
-				if (!(r == origin_row && c == origin_col)) {
-					for (int dr = r - 2; dr <= r + 2; dr++) {
-						for (int dc = c - 2; dc <= c + 2; dc++) {
-							add_move_val(dr, dc, -move_val[get_pos(dr, dc)]);
-							add_move_val(dr, dc, -get_fruit_val(dr, dc));
-						}
-					}
-				}
-			}
-
-			switch (ch) {
-				case '<':
-					for (int i = c - 1; i >= 0; i--) {
-						if (m.get(r, i) != '9') {
-							add_move_val(r, i, -25.0 / (c - i) / (c - i));
-						} else {
-							break;
-						}
-					}
-					break;
-
-				case '^':
-					for (int i = r - 1; i >= 0; i--) {
-						if (m.get(i, c) != '9') {
-							add_move_val(i, c, -25.0 / (r - i) / (r - i));
-						} else {
-							break;
-						}
-					}
-					break;
-
-				case '>':
-					for (int i = c + 1; i < line_size; i++) {
-						if (m.get(r, i) != '9') {
-							add_move_val(r, i, -25.0 / (i - c) / (i - c));
-						} else {
-							break;
-						}
-					}
-					break;
-
-				case 'v':
-					for (int i = r + 1; i < line_size; i++) {
-						if (m.get(i, c) != '9') {
-							add_move_val(i, c, -25.0 / (i - r) / (i - r));
-						} else {
-							break;
-						}
-					}
-					break;
-			}
-
-			if (is_ghost(ch)) {
-				for (int dr = r - 3; dr <= r + 3; dr++) {
-					for (int dc = c - 3; dc <= c + 3; dc++) {
-						int dist = get_m_dist(r, c, dr, dc);
-						if (0 < dist && dist <= 3) {
-							add_move_val(dr, dc, -get_fruit_val(dr, dc));
-						}
-					}
-				}
-				{
-					int dist = get_m_dist(r, c, origin_row, origin_col);
-					if (dist <= 3) {
-						add_move_val(r, c, -25.0 / dist);
-					}
-				}
-			}
 		}
 	}
 
@@ -331,8 +261,9 @@ int evaluate(class server_data &m, double &score) {
 static op_t normal_algorithm(class server_data &m, spjdgs_t &spjdg_ops) {
 	const int old_score = m.get_my_score();
 #ifdef ALGORITHM_DEBUG_ALGORITHM
-	for (int i = 0; i < dops.size(); i++) {
-		printf("dangerous: %d %d\n", dops[i].first, dops[i].second);
+	for (int i = 0; i < spjdg_ops.size(); i++) {
+		printf("special judge: %d %d %lf\n", spjdg_ops[i].move_op,
+                spjdg_ops[i].is_fire, spjdg_ops[i].trend);
 	}
 #endif
 
@@ -349,7 +280,7 @@ static op_t normal_algorithm(class server_data &m, spjdgs_t &spjdg_ops) {
 
 			if (is_same_action) {
 #ifdef ALGORITHM_DEBUG_ALGORITHM
-				printf("recommand!\n");
+				printf("special judge! %lf\n", spjdg_ops[i].trend);
 #endif
 
 				sp += spjdg_ops[i].trend;
@@ -500,27 +431,27 @@ struct strategy player_strategys[] = {
 // o: -s, -sv
 
 // 1: v
-	{ -1,  0,  'w',    0, move_op_stay,  true,  +200, },
-	{ +1,  0,  's',    0, move_op_stay,  true,  +200, },
-	{  0, -1,  'a',    0, move_op_stay,  true,  +200, },
-	{  0, +1,  'd',    0, move_op_stay,  true,  +200, },
+	{ -1,  0,  'w',    0, move_op_stay,  true,  +400, },
+	{ +1,  0,  's',    0, move_op_stay,  true,  +400, },
+	{  0, -1,  'a',    0, move_op_stay,  true,  +400, },
+	{  0, +1,  'd',    0, move_op_stay,  true,  +400, },
 
 // 2: w, wv
-	{  0, -1,  'w',    0, move_op_up,    false, +200, },
-	{  0, +1,  's',    0, move_op_down,  false, +200, },
-	{ +1,  0,  'a',    0, move_op_left,  false, +200, },
-	{ -1,  0,  'd',    0, move_op_right, false, +200, },
+	{  0, -1,  'w',    0, move_op_up,    false, +400, },
+	{  0, +1,  's',    0, move_op_down,  false, +400, },
+	{ +1,  0,  'a',    0, move_op_left,  false, +400, },
+	{ -1,  0,  'd',    0, move_op_right, false, +400, },
 
-	{  0, -1,  'w',    0, move_op_up,    true,  +200, },
-	{  0, +1,  's',    0, move_op_down,  true,  +200, },
-	{ +1,  0,  'a',    0, move_op_left,  true,  +200, },
-	{ -1,  0,  'd',    0, move_op_right, true,  +200, },
+	{  0, -1,  'w',    0, move_op_up,    true,  +400, },
+	{  0, +1,  's',    0, move_op_down,  true,  +400, },
+	{ +1,  0,  'a',    0, move_op_left,  true,  +400, },
+	{ -1,  0,  'd',    0, move_op_right, true,  +400, },
 
 // 3: s(v), !s(-w, -wv)
-	{ -2,  0,  'w',  's', move_op_stay,  true,  +200, },
-	{ +2,  0,  's',  's', move_op_stay,  true,  +200, },
-	{  0, -2,  'a',  's', move_op_stay,  true,  +200, },
-	{  0, +2,  'd',  's', move_op_stay,  true,  +200, },
+	{ -2,  0,  'w',  's', move_op_stay,  true,  +400, },
+	{ +2,  0,  's',  's', move_op_stay,  true,  +400, },
+	{  0, -2,  'a',  's', move_op_stay,  true,  +400, },
+	{  0, +2,  'd',  's', move_op_stay,  true,  +400, },
 
 	{ -2,  0,  'w', -'s', move_op_up,    false, -200, },
 	{ +2,  0,  's', -'s', move_op_down,  false, -200, },
@@ -554,15 +485,15 @@ struct strategy player_strategys[] = {
 	{ -1, +1,  'd',    0, move_op_up,    true,  -200, },
 
 // 5: w, wv
-	{  0, -2,  'w',    0, move_op_up,    false, +200, },
-	{  0, +2,  's',    0, move_op_down,  false, +200, },
-	{ +2,  0,  'a',    0, move_op_left,  false, +200, },
-	{ -2,  0,  'd',    0, move_op_right, false, +200, },
+	{  0, -2,  'w',    0, move_op_up,    false, +400, },
+	{  0, +2,  's',    0, move_op_down,  false, +400, },
+	{ +2,  0,  'a',    0, move_op_left,  false, +400, },
+	{ -2,  0,  'd',    0, move_op_right, false, +400, },
 
-	{  0, -2,  'w',    0, move_op_up,    true,  +200, },
-	{  0, +2,  's',    0, move_op_down,  true,  +200, },
-	{ +2,  0,  'a',    0, move_op_left,  true,  +200, },
-	{ -2,  0,  'd',    0, move_op_right, true,  +200, },
+	{  0, -2,  'w',    0, move_op_up,    true,  +400, },
+	{  0, +2,  's',    0, move_op_down,  true,  +400, },
+	{ +2,  0,  'a',    0, move_op_left,  true,  +400, },
+	{ -2,  0,  'd',    0, move_op_right, true,  +400, },
 
 // 6: -w, -wv
 	{ -3,  0,  'w',    0, move_op_up,    false, -200, },
@@ -652,26 +583,26 @@ struct strategy player_strategys[] = {
 	{ +2, +1,  'd',    0, move_op_right, true,  -200, },
 
 // d: w, wv
-	{  0, +1,  'w',    0, move_op_up,    false, +200, },
-	{  0, -1,  's',    0, move_op_down,  false, +200, },
-	{  -1, 0,  'a',    0, move_op_left,  false, +200, },
-	{  +1, 0,  'd',    0, move_op_right, false, +200, },
+	{  0, +1,  'w',    0, move_op_up,    false, +400, },
+	{  0, -1,  's',    0, move_op_down,  false, +400, },
+	{  -1, 0,  'a',    0, move_op_left,  false, +400, },
+	{  +1, 0,  'd',    0, move_op_right, false, +400, },
 
-	{  0, +1,  'w',    0, move_op_up,    true,  +200, },
-	{  0, -1,  's',    0, move_op_down,  true,  +200, },
-	{  -1, 0,  'a',    0, move_op_left,  true,  +200, },
-	{  +1, 0,  'd',    0, move_op_right, true,  +200, },
+	{  0, +1,  'w',    0, move_op_up,    true,  +400, },
+	{  0, -1,  's',    0, move_op_down,  true,  +400, },
+	{  -1, 0,  'a',    0, move_op_left,  true,  +400, },
+	{  +1, 0,  'd',    0, move_op_right, true,  +400, },
 
 // e: w, wv
-	{  0, +2,  'w',    0, move_op_up,    false, +200, },
-	{  0, -2,  's',    0, move_op_down,  false, +200, },
-	{  -2, 0,  'a',    0, move_op_left,  false, +200, },
-	{  +2, 0,  'd',    0, move_op_right, false, +200, },
+	{  0, +2,  'w',    0, move_op_up,    false, +400, },
+	{  0, -2,  's',    0, move_op_down,  false, +400, },
+	{  -2, 0,  'a',    0, move_op_left,  false, +400, },
+	{  +2, 0,  'd',    0, move_op_right, false, +400, },
 
-	{  0, +2,  'w',    0, move_op_up,    true,  +200, },
-	{  0, -2,  's',    0, move_op_down,  true,  +200, },
-	{  -2, 0,  'a',    0, move_op_left,  true,  +200, },
-	{  +2, 0,  'd',    0, move_op_right, true,  +200, },
+	{  0, +2,  'w',    0, move_op_up,    true,  +400, },
+	{  0, -2,  's',    0, move_op_down,  true,  +400, },
+	{  -2, 0,  'a',    0, move_op_left,  true,  +400, },
+	{  +2, 0,  'd',    0, move_op_right, true,  +400, },
 
 // f: -d, -dv
 	{  0, +3,  'w',    0, move_op_right, false, -200, },
@@ -717,10 +648,10 @@ struct strategy player_strategys[] = {
 	{ -1, -1,  'd',    0, move_op_up,    true,  -200, },
 
 // i: sv
-	{ +1,  0,  'w',    0, move_op_down,  true,  +200, },
-	{ -1,  0,  's',    0, move_op_up,    true,  +200, },
-	{  0, +1,  'a',    0, move_op_right, true,  +200, },
-	{  0, -1,  'd',    0, move_op_left,  true,  +200, },
+	{ +1,  0,  'w',    0, move_op_down,  true,  +400, },
+	{ -1,  0,  's',    0, move_op_up,    true,  +400, },
+	{  0, +1,  'a',    0, move_op_right, true,  +400, },
+	{  0, -1,  'd',    0, move_op_left,  true,  +400, },
 
 // j: -s, -sv, -d, -dv
 	{ +1, +1,  'w',    0, move_op_down,  false, -200, },
@@ -766,15 +697,15 @@ struct strategy player_strategys[] = {
 	{ -1, -2,  'd',    0, move_op_up,    true,  -200, },
 
 // m: w(w, wv), !w(-s, -sv)
-	{ +2,  0,  'w',  'w', move_op_up,    false, +200, },
-	{ -2,  0,  's',  'w', move_op_down,  false, +200, },
-	{  0, +2,  'a',  'w', move_op_left,  false, +200, },
-	{  0, -2,  'd',  'w', move_op_right, false, +200, },
+	{ +2,  0,  'w',  'w', move_op_up,    false, +400, },
+	{ -2,  0,  's',  'w', move_op_down,  false, +400, },
+	{  0, +2,  'a',  'w', move_op_left,  false, +400, },
+	{  0, -2,  'd',  'w', move_op_right, false, +400, },
 
-	{ +2,  0,  'w',  'w', move_op_up,    true,  +200, },
-	{ -2,  0,  's',  'w', move_op_down,  true,  +200, },
-	{  0, +2,  'a',  'w', move_op_left,  true,  +200, },
-	{  0, -2,  'd',  'w', move_op_right, true,  +200, },
+	{ +2,  0,  'w',  'w', move_op_up,    true,  +400, },
+	{ -2,  0,  's',  'w', move_op_down,  true,  +400, },
+	{  0, +2,  'a',  'w', move_op_left,  true,  +400, },
+	{  0, -2,  'd',  'w', move_op_right, true,  +400, },
 
 	{ +2,  0,  'w', -'w', move_op_down,  false, -200, },
 	{ -2,  0,  's', -'w', move_op_up,    false, -200, },
@@ -812,68 +743,170 @@ struct strategy player_strategys[] = {
 struct strategy ghost_strategys[] = {
 // 相邻
 	// 不动射击
-	{ -1,  0,  'w', 'G', move_op_stay,  true, 200, },
-	{ +1,  0,  's', 'G', move_op_stay,  true, 200, },
-	{  0, -1,  'a', 'G', move_op_stay,  true, 200, },
-	{  0, +1,  'd', 'G', move_op_stay,  true, 200, },
+	{ -1,  0,  'w', 'G', move_op_stay,  true,  +300, },
+	{ +1,  0,  's', 'G', move_op_stay,  true,  +300, },
+	{  0, -1,  'a', 'G', move_op_stay,  true,  +300, },
+	{  0, +1,  'd', 'G', move_op_stay,  true,  +300, },
 	// 转向射击
-	{ -1,  0, -'w', 'G', move_op_up,    true, 200, },
-	{ +1,  0, -'s', 'G', move_op_down,  true, 200, },
-	{  0, -1, -'a', 'G', move_op_left,  true, 200, },
-	{  0, +1, -'d', 'G', move_op_right, true, 200, },
+	{ -1,  0, -'w', 'G', move_op_up,    true,  +300, },
+	{ +1,  0, -'s', 'G', move_op_down,  true,  +300, },
+	{  0, -1, -'a', 'G', move_op_left,  true,  +300, },
+	{  0, +1, -'d', 'G', move_op_right, true,  +300, },
 	// 惩罚：移动到幽灵上
-	{ -1,  0,  'w', 'G', move_op_up,    false, -200, },
-	{ +1,  0,  's', 'G', move_op_down,  false, -200, },
-	{ 0,  -1,  'a', 'G', move_op_left,  false, -200, },
-	{ 0,  +1,  'd', 'G', move_op_right, false, -200, },
-	{ -1,  0,  'w', 'G', move_op_up,    true,  -200, },
-	{ +1,  0,  's', 'G', move_op_down,  true,  -200, },
-	{ 0,  -1,  'a', 'G', move_op_left,  true,  -200, },
-	{ 0,  +1,  'd', 'G', move_op_right, true,  -200, },
+	{ -1,  0,  'w', 'G', move_op_up,    false, -999, },
+	{ +1,  0,  's', 'G', move_op_down,  false, -999, },
+	{ 0,  -1,  'a', 'G', move_op_left,  false, -999, },
+	{ 0,  +1,  'd', 'G', move_op_right, false, -999, },
+	{ -1,  0,  'w', 'G', move_op_up,    true,  -999, },
+	{ +1,  0,  's', 'G', move_op_down,  true,  -999, },
+	{ 0,  -1,  'a', 'G', move_op_left,  true,  -999, },
+	{ 0,  +1,  'd', 'G', move_op_right, true,  -999, },
 // 隔一格
 	// 不动射击
-	{ -2,  0,  'w', 'G', move_op_stay,  true, 100, },
-	{ +2,  0,  's', 'G', move_op_stay,  true, 100, },
-	{  0, -2,  'a', 'G', move_op_stay,  true, 100, },
-	{  0, +2,  'd', 'G', move_op_stay,  true, 100, },
+	{ -2,  0,  'w', 'G', move_op_stay,  true,  +100, },
+	{ +2,  0,  's', 'G', move_op_stay,  true,  +100, },
+	{  0, -2,  'a', 'G', move_op_stay,  true,  +100, },
+	{  0, +2,  'd', 'G', move_op_stay,  true,  +100, },
 	// 移动射击
-	{ -2,  0,  'w', 'G', move_op_up,    true, 100, },
-	{ +2,  0,  's', 'G', move_op_down,  true, 100, },
-	{  0, -2,  'a', 'G', move_op_left,  true, 100, },
-	{  0, +2,  'd', 'G', move_op_right, true, 100, },
+	{ -2,  0,  'w', 'G', move_op_up,    true,  +100, },
+	{ +2,  0,  's', 'G', move_op_down,  true,  +100, },
+	{  0, -2,  'a', 'G', move_op_left,  true,  +100, },
+	{  0, +2,  'd', 'G', move_op_right, true,  +100, },
 	// 转向射击
-	{ -2,  0, -'w', 'G', move_op_up,    true, 100, },
-	{ +2,  0, -'s', 'G', move_op_down,  true, 100, },
-	{  0, -2, -'a', 'G', move_op_left,  true, 100, },
-	{  0, +2, -'d', 'G', move_op_right, true, 100, },
+	{ -2,  0, -'w', 'G', move_op_up,    true,  +100, },
+	{ +2,  0, -'s', 'G', move_op_down,  true,  +100, },
+	{  0, -2, -'a', 'G', move_op_left,  true,  +100, },
+	{  0, +2, -'d', 'G', move_op_right, true,  +100, },
 // 对角线
 	// 转向水平射击
-	{ -1, -1, -'a', 'G', move_op_left,  true, 50,  },
-	{ +1, -1, -'a', 'G', move_op_left,  true, 50,  },
-	{ -1, +1, -'d', 'G', move_op_right, true, 50,  },
-	{ +1, +1, -'d', 'G', move_op_right, true, 50,  },
+	{ -1, -1, -'a', 'G', move_op_left,  true,  +50,  },
+	{ +1, -1, -'a', 'G', move_op_left,  true,  +50,  },
+	{ -1, +1, -'d', 'G', move_op_right, true,  +50,  },
+	{ +1, +1, -'d', 'G', move_op_right, true,  +50,  },
 	// 不动射击
-	{ -1, -1,  'a', 'G', move_op_stay,  true, 50,  },
-	{ +1, -1,  'a', 'G', move_op_stay,  true, 50,  },
-	{ -1, +1,  'd', 'G', move_op_stay,  true, 50,  },
-	{ +1, +1,  'd', 'G', move_op_stay,  true, 50,  },
+	{ -1, -1,  'a', 'G', move_op_stay,  true,  +50,  },
+	{ +1, -1,  'a', 'G', move_op_stay,  true,  +50,  },
+	{ -1, +1,  'd', 'G', move_op_stay,  true,  +50,  },
+	{ +1, +1,  'd', 'G', move_op_stay,  true,  +50,  },
 	// 惩罚：移动到幽灵攻击范围里
-	{ -1, -1,  'a', 'G', move_op_left,  false, -50,  },
-	{ -1, -1,  'w', 'G', move_op_up,    false, -50,  },
-	{ +1, -1,  'a', 'G', move_op_left,  false, -50,  },
-	{ +1, -1,  's', 'G', move_op_down,  false, -50,  },
-	{ -1, +1,  'd', 'G', move_op_right, false, -50,  },
-	{ -1, +1,  'w', 'G', move_op_up,    false, -50,  },
-	{ +1, +1,  'd', 'G', move_op_right, false, -50,  },
-	{ +1, +1,  's', 'G', move_op_down,  false, -50,  },
-	{ -1, -1,  'a', 'G', move_op_left,  true,  -50,  },
-	{ -1, -1,  'w', 'G', move_op_up,    true,  -50,  },
-	{ +1, -1,  'a', 'G', move_op_left,  true,  -50,  },
-	{ +1, -1,  's', 'G', move_op_down,  true,  -50,  },
-	{ -1, +1,  'd', 'G', move_op_right, true,  -50,  },
-	{ -1, +1,  'w', 'G', move_op_up,    true,  -50,  },
-	{ +1, +1,  'd', 'G', move_op_right, true,  -50,  },
-	{ +1, +1,  's', 'G', move_op_down,  true,  -50,  },
+	{ -1, -1,  'a', 'G', move_op_left,  false, -999,  },
+	{ -1, -1,  'w', 'G', move_op_up,    false, -999,  },
+	{ +1, -1,  'a', 'G', move_op_left,  false, -999,  },
+	{ +1, -1,  's', 'G', move_op_down,  false, -999,  },
+	{ -1, +1,  'd', 'G', move_op_right, false, -999,  },
+	{ -1, +1,  'w', 'G', move_op_up,    false, -999,  },
+	{ +1, +1,  'd', 'G', move_op_right, false, -999,  },
+	{ +1, +1,  's', 'G', move_op_down,  false, -999,  },
+	{ -1, -1,  'a', 'G', move_op_left,  true,  -999,  },
+	{ -1, -1,  'w', 'G', move_op_up,    true,  -999,  },
+	{ +1, -1,  'a', 'G', move_op_left,  true,  -999,  },
+	{ +1, -1,  's', 'G', move_op_down,  true,  -999,  },
+	{ -1, +1,  'd', 'G', move_op_right, true,  -999,  },
+	{ -1, +1,  'w', 'G', move_op_up,    true,  -999,  },
+	{ +1, +1,  'd', 'G', move_op_right, true,  -999,  },
+	{ +1, +1,  's', 'G', move_op_down,  true,  -999,  },
+};
+
+struct strategy bullet_strategys[] = {
+/*
+     1
+   2 3 4
+ 5 6 w 7 8
+   9 a b
+     c
+*/
+// 1: v(---w)
+    { -2,  0,  'w', 'v', move_op_up,    false, -300, },
+    { +2,  0,  's', '^', move_op_down,  false, -300, },
+    {  0, -2,  'a', '>', move_op_left,  false, -300, },
+    {  0, +2,  'd', '<', move_op_right, false, -300, },
+// 2: >(---w, ---wv)
+    { -1, -1,  'w', '>', move_op_up,    false, -300, },
+    { +1, +1,  's', '<', move_op_down,  false, -300, },
+    { +1, -1,  'a', '^', move_op_left,  false, -300, },
+    { -1, +1,  'd', 'v', move_op_right, false, -300, },
+
+    { -1, -1,  'w', '>', move_op_up,    true,  -300, },
+    { +1, +1,  's', '<', move_op_down,  true,  -300, },
+    { +1, -1,  'a', '^', move_op_left,  true,  -300, },
+    { -1, +1,  'd', 'v', move_op_right, true,  -300, },
+// 3: v(++v), (<, >)(---w, ---wv)
+    { -1,  0,  'w', 'v', move_op_stay,  true,  +200, },
+    { +1,  0,  's', '^', move_op_stay,  true,  +200, },
+    {  0, -1,  'a', '>', move_op_stay,  true,  +200, },
+    {  0, +1,  'd', '<', move_op_stay,  true,  +200, },
+
+    { -1,  0,  'w', '<', move_op_up,    false, -300, },
+    { +1,  0,  's', '>', move_op_down,  false, -300, },
+    {  0, -1,  'a', 'v', move_op_left,  false, -300, },
+    {  0, +1,  'd', '^', move_op_right, false, -300, },
+
+    { -1,  0,  'w', '<', move_op_up,    true,  -300, },
+    { +1,  0,  's', '>', move_op_down,  true,  -300, },
+    {  0, -1,  'a', 'v', move_op_left,  true,  -300, },
+    {  0, +1,  'd', '^', move_op_right, true,  -300, },
+
+    { -1,  0,  'w', '>', move_op_up,    false, -300, },
+    { +1,  0,  's', '<', move_op_down,  false, -300, },
+    {  0, -1,  'a', '^', move_op_left,  false, -300, },
+    {  0, +1,  'd', 'v', move_op_right, false, -300, },
+
+    { -1,  0,  'w', '>', move_op_up,    true,  -300, },
+    { +1,  0,  's', '<', move_op_down,  true,  -300, },
+    {  0, -1,  'a', '^', move_op_left,  true,  -300, },
+    {  0, +1,  'd', 'v', move_op_right, true,  -300, },
+// 4: <(---w, ---wv)
+    { -1, +1,  'w', '<', move_op_up,    false, -300, },
+    { +1, -1,  's', '>', move_op_down,  false, -300, },
+    { -1, -1,  'a', 'v', move_op_left,  false, -300, },
+    { +1, +1,  'd', '^', move_op_right, false, -300, },
+
+    { -1, +1,  'w', '<', move_op_up,    true,  -300, },
+    { +1, -1,  's', '>', move_op_down,  true,  -300, },
+    { -1, -1,  'a', 'v', move_op_left,  true,  -300, },
+    { +1, +1,  'd', '^', move_op_right, true,  -300, },
+// 5: >(+av)
+    {  0, -2,  'w', '>', move_op_left,  true,  +100, },
+    {  0, +2,  's', '<', move_op_right, true,  +100, },
+    { +2,  0,  'a', '^', move_op_down,  true,  +100, },
+    { -2,  0,  'd', 'v', move_op_up,    true,  +100, },
+// 6: >(+++av)
+    {  0, -1,  'w', '>', move_op_left,  true,  +300, },
+    {  0, +1,  's', '<', move_op_right, true,  +300, },
+    { +1,  0,  'a', '^', move_op_down,  true,  +300, },
+    { -1,  0,  'd', 'v', move_op_up,    true,  +300, },
+// 7: <(+++dv)
+    {  0, +1,  'w', '<', move_op_right, true,  +300, },
+    {  0, -1,  's', '>', move_op_left,  true,  +300, },
+    { -1,  0,  'a', 'v', move_op_up,    true,  +300, },
+    { +1,  0,  'd', '^', move_op_down,  true,  +300, },
+// 8: <(+dv)
+    {  0, +2,  'w', '<', move_op_right, true,  +100, },
+    {  0, -2,  's', '>', move_op_left,  true,  +100, },
+    { -2,  0,  'a', 'v', move_op_up,    true,  +100, },
+    { +2,  0,  'd', '^', move_op_down,  true,  +100, },
+// 9:
+// a: ^(---v, ---, +sv)
+    { +1,  0,  'w', '^', move_op_stay,  false, -300, },
+    { -1,  0,  's', 'v', move_op_stay,  false, -300, },
+    { 0,  +1,  'a', '<', move_op_stay,  false, -300, },
+    { 0,  -1,  'd', '>', move_op_stay,  false, -300, },
+
+    { +1,  0,  'w', '^', move_op_stay,  true,  -300, },
+    { -1,  0,  's', 'v', move_op_stay,  true,  -300, },
+    { 0,  +1,  'a', '<', move_op_stay,  true,  -300, },
+    { 0,  -1,  'd', '>', move_op_stay,  true,  -300, },
+
+    { +1,  0,  'w', '^', move_op_down,  true,  +100, },
+    { -1,  0,  's', 'v', move_op_up,    true,  +100, },
+    { 0,  +1,  'a', '<', move_op_right, true,  +100, },
+    { 0,  -1,  'd', '>', move_op_left,  true,  +100, },
+// b:
+// c: ^(+sv)
+    { +2,  0,  'w', '^', move_op_down,  true,  +100, },
+    { -2,  0,  's', 'v', move_op_up,    true,  +100, },
+    { 0,  +2,  'a', '<', move_op_right, true,  +100, },
+    { 0,  -2,  'd', '>', move_op_left,  true,  +100, },
 };
 
 static bool dist_bound_check_pass(class server_data &m,
@@ -923,6 +956,12 @@ static spjdgs_t special_algorithm(class server_data &m, int dmin, int dmax) {
 				int len = sizeof(s) / sizeof(*s);
 				exec_strategys(s, len, special_ops, m, dr, dc);
 			}
+
+            if (is_bullet(ch)) {
+                auto&s = bullet_strategys;
+				int len = sizeof(s) / sizeof(*s);
+				exec_strategys(s, len, special_ops, m, dr, dc);
+            }
 		}
 	}
 
