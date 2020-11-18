@@ -13,19 +13,19 @@ default: src clean
 
 .PHONY: src
 src:
-	[ -e $(OUTDIR) ] || mkdir -p $(OUTDIR)
-	make -C src/
-	make install -C src/
+    [ -e $(OUTDIR) ] || mkdir -p $(OUTDIR)
+    make -C src/
+    make install -C src/
 
 .PHONY: test
 test: src
-	make clean
-	make -C test/
-	rm -rf $(OUTDIR)
-	mkdir -p $(OUTDIR)
-	make install -C test/
-	make clean
+    make clean
+    make -C test/
+    rm -rf $(OUTDIR)
+    mkdir -p $(OUTDIR)
+    make install -C test/
+    make clean
 
 .PHONY: clean
 clean:
-	-find -name "*.o" | xargs rm -f
+    -find -name "*.o" | xargs rm -f

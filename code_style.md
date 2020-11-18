@@ -14,41 +14,41 @@
 char buf[4096];
 
 int main(int argc, char **argv) {
-	int socket_fd;
+    int socket_fd;
 
-	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (socket_fd < 0) {
-		perror("socket");
-		return 1;
-	}
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd < 0) {
+        perror("socket");
+        return 1;
+    }
 
-	struct sockaddr_in serv_addr;
-	memset(&serv_addr, 0, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(9527);
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(9527);
 
-	if (inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0) {
-		perror("inet_pton");
-		return 1;
-	}
+    if (inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0) {
+        perror("inet_pton");
+        return 1;
+    }
 
-	if (connect(socket_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-		perror("connect");
-		return 1;
-	}
+    if (connect(socket_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("connect");
+        return 1;
+    }
 
-	printf("send msg to server: \n");
-	if (send(socket_fd, argv[2], strlen(argv[2]), 0) < 0) {
-		perror("send");
-		return 1;
-	}
+    printf("send msg to server: \n");
+    if (send(socket_fd, argv[2], strlen(argv[2]), 0) < 0) {
+        perror("send");
+        return 1;
+    }
 
-	int n = recv(socket_fd, buf, sizeof(buf), 0);
-	printf("recv[%d]: %s\n", n, buf);
+    int n = recv(socket_fd, buf, sizeof(buf), 0);
+    printf("recv[%d]: %s\n", n, buf);
 
-	close(socket_fd);
+    close(socket_fd);
 
-	return 0;
+    return 0;
 }
 ```
 
