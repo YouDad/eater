@@ -12,4 +12,7 @@ int evaluate(class server_data &m, double &score);
 // 返回值是一个pair，第一个位置是移动，第二个位置是是否开炮
 std::pair<enum move_operating, bool> algorithm(class server_data &m);
 
+void init_algorithm();
+void deinit_algorithm();
+
 #endif

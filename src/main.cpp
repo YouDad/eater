@@ -73,6 +73,7 @@ int main(int argc, const char **argv) {
     }
     printf("\033[2J");
 
+    init_algorithm();
     while (true) {
         ret = get_server_data(buf);
         if (ret == 2) {
@@ -96,6 +97,7 @@ int main(int argc, const char **argv) {
         send_operating(op.first, op.second);
     }
 
+    deinit_algorithm();
     delete []buf;
     finish_read_thread();
     disconnect();

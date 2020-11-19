@@ -530,6 +530,26 @@ static bool dist_bound_check_pass(class server_data &m,
     return true;
 }
 
+// struct strategy *ghost_strategys;
+struct strategy *player_strategys;
+// struct strategy *bullet_strategys;
+int ghost_strategys_len;
+int player_strategys_len;
+int bullet_strategys_len;
+
+void init_algorithm() {
+    // ghost_strategys_len = new_and_load_strategys("config/ghost.json", ghost_strategys);
+    ghost_strategys_len = sizeof(ghost_strategys) / sizeof(*ghost_strategys);
+    player_strategys_len = new_and_load_strategys("config/player.json", player_strategys);
+    bullet_strategys_len = sizeof(bullet_strategys) / sizeof(*bullet_strategys);
+}
+
+void deinit_algorithm() {
+    // delete[] ghost_strategys;
+    delete[] player_strategys;
+    // delete[] bullet_strategys;
+}
+
 // dmin: min dist
 // dmax: max dist
 static spjdgs_t special_algorithm(class server_data &m, int dmin, int dmax) {
@@ -547,22 +567,24 @@ static spjdgs_t special_algorithm(class server_data &m, int dmin, int dmax) {
 
             char ch = m.get(r + dr, c + dc);
 
+            struct strategy *s = NULL;
+            int len;
             if (is_ghost(ch)) {
-                auto& s = ghost_strategys;
-                int len = sizeof(s) / sizeof(*s);
-                exec_strategys(s, len, special_ops, m, dr, dc);
+                s = ghost_strategys;
+                len = ghost_strategys_len;
             }
 
             if (is_player(ch)) {
-                struct strategy *s;
-                int len  = new_and_load_strategys("config/player.json", s);
-                exec_strategys(s, len, special_ops, m, dr, dc);
-                delete []s;
+                s = player_strategys;
+                len = player_strategys_len;
             }
 
             if (is_bullet(ch)) {
-                auto&s = bullet_strategys;
-                int len = sizeof(s) / sizeof(*s);
+                s = bullet_strategys;
+                len = bullet_strategys_len;
+            }
+
+            if (s) {
                 exec_strategys(s, len, special_ops, m, dr, dc);
             }
         }
