@@ -25,8 +25,10 @@ int main(int argc, char **argv) {
         printf("\n");
     }
 
-    int player;
-    sscanf(argv[1], "%d", &player);
+    int player = 0;
+    if (argc > 1) {
+        sscanf(argv[1], "%d", &player);
+    }
 
     // strings size base 0
     int str_size = strings.size() - 1;
