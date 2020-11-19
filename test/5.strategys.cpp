@@ -1,7 +1,7 @@
 #include "modules/strategy.h"
 #include <stdio.h>
 
-struct strategy _player_strategys[] = {
+struct strategy _player[] = {
 /*
        6
      7 3 a
@@ -346,33 +346,101 @@ struct strategy _player_strategys[] = {
     { 0,  -3,  'd',    0, move_op_left,  true,  -200, },
 };
 
-int main() {
-    struct strategy *ss;
-    int len = new_and_load_strategys("config/player.json", ss);
+struct strategy _ghost[] = {
+// 相邻
+    // 不动射击
+    { -1,  0,  'w', 'G', move_op_stay,  true,  +300, },
+    { +1,  0,  's', 'G', move_op_stay,  true,  +300, },
+    {  0, -1,  'a', 'G', move_op_stay,  true,  +300, },
+    {  0, +1,  'd', 'G', move_op_stay,  true,  +300, },
+    // 转向射击
+    { -1,  0, -'w', 'G', move_op_up,    true,  +300, },
+    { +1,  0, -'s', 'G', move_op_down,  true,  +300, },
+    {  0, -1, -'a', 'G', move_op_left,  true,  +300, },
+    {  0, +1, -'d', 'G', move_op_right, true,  +300, },
+    // 惩罚：移动到幽灵上
+    { -1,  0,  'w', 'G', move_op_up,    false, -999, },
+    { +1,  0,  's', 'G', move_op_down,  false, -999, },
+    { 0,  -1,  'a', 'G', move_op_left,  false, -999, },
+    { 0,  +1,  'd', 'G', move_op_right, false, -999, },
+    { -1,  0,  'w', 'G', move_op_up,    true,  -999, },
+    { +1,  0,  's', 'G', move_op_down,  true,  -999, },
+    { 0,  -1,  'a', 'G', move_op_left,  true,  -999, },
+    { 0,  +1,  'd', 'G', move_op_right, true,  -999, },
+// 隔一格
+    // 不动射击
+    { -2,  0,  'w', 'G', move_op_stay,  true,  +100, },
+    { +2,  0,  's', 'G', move_op_stay,  true,  +100, },
+    {  0, -2,  'a', 'G', move_op_stay,  true,  +100, },
+    {  0, +2,  'd', 'G', move_op_stay,  true,  +100, },
+    // 移动射击
+    { -2,  0,  'w', 'G', move_op_up,    true,  +100, },
+    { +2,  0,  's', 'G', move_op_down,  true,  +100, },
+    {  0, -2,  'a', 'G', move_op_left,  true,  +100, },
+    {  0, +2,  'd', 'G', move_op_right, true,  +100, },
+    // 转向射击
+    { -2,  0, -'w', 'G', move_op_up,    true,  +100, },
+    { +2,  0, -'s', 'G', move_op_down,  true,  +100, },
+    {  0, -2, -'a', 'G', move_op_left,  true,  +100, },
+    {  0, +2, -'d', 'G', move_op_right, true,  +100, },
+// 对角线
+    // 转向水平射击
+    { -1, -1, -'a', 'G', move_op_left,  true,  +50,  },
+    { +1, -1, -'a', 'G', move_op_left,  true,  +50,  },
+    { -1, +1, -'d', 'G', move_op_right, true,  +50,  },
+    { +1, +1, -'d', 'G', move_op_right, true,  +50,  },
+    // 不动射击
+    { -1, -1,  'a', 'G', move_op_stay,  true,  +50,  },
+    { +1, -1,  'a', 'G', move_op_stay,  true,  +50,  },
+    { -1, +1,  'd', 'G', move_op_stay,  true,  +50,  },
+    { +1, +1,  'd', 'G', move_op_stay,  true,  +50,  },
+    // 惩罚：移动到幽灵攻击范围里
+    { -1, -1,  'a', 'G', move_op_left,  false, -999,  },
+    { -1, -1,  'w', 'G', move_op_up,    false, -999,  },
+    { +1, -1,  'a', 'G', move_op_left,  false, -999,  },
+    { +1, -1,  's', 'G', move_op_down,  false, -999,  },
+    { -1, +1,  'd', 'G', move_op_right, false, -999,  },
+    { -1, +1,  'w', 'G', move_op_up,    false, -999,  },
+    { +1, +1,  'd', 'G', move_op_right, false, -999,  },
+    { +1, +1,  's', 'G', move_op_down,  false, -999,  },
+    { -1, -1,  'a', 'G', move_op_left,  true,  -999,  },
+    { -1, -1,  'w', 'G', move_op_up,    true,  -999,  },
+    { +1, -1,  'a', 'G', move_op_left,  true,  -999,  },
+    { +1, -1,  's', 'G', move_op_down,  true,  -999,  },
+    { -1, +1,  'd', 'G', move_op_right, true,  -999,  },
+    { -1, +1,  'w', 'G', move_op_up,    true,  -999,  },
+    { +1, +1,  'd', 'G', move_op_right, true,  -999,  },
+    { +1, +1,  's', 'G', move_op_down,  true,  -999,  },
+};
+
+void test(const char *path, struct strategy *strategys, int slen, bool print) {
+    struct strategy *read_s;
+    int len = new_and_load_strategys(path, read_s);
 
     for (int i = 0; i < len; i++) {
-        auto& s = ss[i];
-        char print_we[4] = "' '";
-        char print_player[4] = "' '";
-        print_we[1] = s.we;
-        print_player[1] = s.player < 0 ? -s.player : s.player;
+        auto& s = read_s[i];
+        if (print) {
+            char print_we[4] = "' '";
+            char print_player[4] = "' '";
+            print_we[1] = s.we;
+            print_player[1] = s.player < 0 ? -s.player : s.player;
 
-        printf("{ %+d, %+d, %c%s, %c%s, move_op_%s %s %+d, }, \n",
-                s.dr, s.dc,
-                s.we < 0 ? '-' : ' ', s.we ? print_we : "  0",
-                s.player < 0 ? '-' : ' ', s.player ? print_player : "  0",
-                s.move == move_op_stay ? "stay, ":
-                s.move == move_op_up ?   "up,   ":
-                s.move == move_op_down ? "down, ":
-                s.move == move_op_left ? "left, ": "right,",
-                s.is_fire ? "true, " : "false,",
-                (int)s.trend
-        );
+            printf("{ %+d, %+d, %c%s, %c%s, move_op_%s %s %+d, }, \n",
+                    s.dr, s.dc,
+                    s.we < 0 ? '-' : ' ', s.we ? print_we : "  0",
+                    s.player < 0 ? '-' : ' ', s.player ? print_player : "  0",
+                    s.move == move_op_stay ? "stay, ":
+                    s.move == move_op_up ?   "up,   ":
+                    s.move == move_op_down ? "down, ":
+                    s.move == move_op_left ? "left, ": "right,",
+                    s.is_fire ? "true, " : "false,",
+                    (int)s.trend
+            );
+        }
 
-        int slen = sizeof(_player_strategys) / sizeof(*_player_strategys);
         bool have = false;
         for (int j = 0; j < slen; j++) {
-            auto &s2 = _player_strategys[j];
+            auto &s2 = strategys[j];
             if(s.dr != s2.dr)
                 continue;
             if(s.dc != s2.dc)
@@ -393,7 +461,12 @@ int main() {
     }
 
     if (len) {
-        delete[] ss;
+        delete[] read_s;
     }
+}
+
+int main() {
+    test("config/player.json", _player, sizeof(_player) / sizeof(*_player), 0);
+    test("config/ghost.json", _ghost, sizeof(_ghost) / sizeof(*_ghost), 1);
     return 0;
 }

@@ -55,7 +55,7 @@ static char rotate_char_clockwise(char ch) {
         }
     }
 
-    strcpy(chars, "^>v<^");
+    strncpy(chars, "^>v<^", sizeof(chars));
     for (int i = 0; i < sizeof(chars); i++) {
         if (ch == chars[i]) {
             return chars[i + 1];
@@ -152,10 +152,11 @@ int new_and_load_strategys(const char *filename, struct strategy *&strategys) {
         double trend;
         char player[4];
         char move, fire;
+        char single = 0;
         mop_t move_op;
-        int ret = sscanf(op.c_str(), "<%d, %d>{%[^}]}(%c%c)[%lf]",
-                &dr, &dc, player, &move, &fire, &trend);
-        if (ret != 6) {
+        int ret = sscanf(op.c_str(), "<%d, %d>{%[^}]}(%c%c)[%lf]%c",
+                &dr, &dc, player, &move, &fire, &trend, &single);
+        if (ret < 6) {
             continue;
         }
 
@@ -175,13 +176,20 @@ int new_and_load_strategys(const char *filename, struct strategy *&strategys) {
             strategys[cnt].is_fire = fire == 'v';
             strategys[cnt].move = move_op;
             strategys[cnt].player = player[0];
-            strategys[cnt].we = we;
+            if (single) {
+                strategys[cnt].we = single;
+            } else {
+                strategys[cnt].we = we;
+            }
 
             rotate_position_clockwise(dr, dc);
             we = rotate_char_clockwise(we);
             player[0] = rotate_char_clockwise(player[0]);
             move_op = rotate_move_op_clockwise(move_op);
             cnt++;
+            if (single) {
+                break;
+            }
         }
     }
 

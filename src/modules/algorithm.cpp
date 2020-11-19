@@ -9,6 +9,7 @@
 
 #include "modules/algorithm.h"
 
+#define ALGORITHM_BULLET_DEFINE
 // #define ALGORITHM_DEBUG_MEMSET
 // #define ALGORITHM_DEBUG_DIST
 // #define ALGORITHM_DEBUG_DIST_GRAPH
@@ -342,73 +343,7 @@ static op_t normal_algorithm(class server_data &m, spjdgs_t &spjdg_ops) {
     return make_pair(optimal_move_op, optimal_is_fire);
 }
 
-struct strategy ghost_strategys[] = {
-// 相邻
-    // 不动射击
-    { -1,  0,  'w', 'G', move_op_stay,  true,  +300, },
-    { +1,  0,  's', 'G', move_op_stay,  true,  +300, },
-    {  0, -1,  'a', 'G', move_op_stay,  true,  +300, },
-    {  0, +1,  'd', 'G', move_op_stay,  true,  +300, },
-    // 转向射击
-    { -1,  0, -'w', 'G', move_op_up,    true,  +300, },
-    { +1,  0, -'s', 'G', move_op_down,  true,  +300, },
-    {  0, -1, -'a', 'G', move_op_left,  true,  +300, },
-    {  0, +1, -'d', 'G', move_op_right, true,  +300, },
-    // 惩罚：移动到幽灵上
-    { -1,  0,  'w', 'G', move_op_up,    false, -999, },
-    { +1,  0,  's', 'G', move_op_down,  false, -999, },
-    { 0,  -1,  'a', 'G', move_op_left,  false, -999, },
-    { 0,  +1,  'd', 'G', move_op_right, false, -999, },
-    { -1,  0,  'w', 'G', move_op_up,    true,  -999, },
-    { +1,  0,  's', 'G', move_op_down,  true,  -999, },
-    { 0,  -1,  'a', 'G', move_op_left,  true,  -999, },
-    { 0,  +1,  'd', 'G', move_op_right, true,  -999, },
-// 隔一格
-    // 不动射击
-    { -2,  0,  'w', 'G', move_op_stay,  true,  +100, },
-    { +2,  0,  's', 'G', move_op_stay,  true,  +100, },
-    {  0, -2,  'a', 'G', move_op_stay,  true,  +100, },
-    {  0, +2,  'd', 'G', move_op_stay,  true,  +100, },
-    // 移动射击
-    { -2,  0,  'w', 'G', move_op_up,    true,  +100, },
-    { +2,  0,  's', 'G', move_op_down,  true,  +100, },
-    {  0, -2,  'a', 'G', move_op_left,  true,  +100, },
-    {  0, +2,  'd', 'G', move_op_right, true,  +100, },
-    // 转向射击
-    { -2,  0, -'w', 'G', move_op_up,    true,  +100, },
-    { +2,  0, -'s', 'G', move_op_down,  true,  +100, },
-    {  0, -2, -'a', 'G', move_op_left,  true,  +100, },
-    {  0, +2, -'d', 'G', move_op_right, true,  +100, },
-// 对角线
-    // 转向水平射击
-    { -1, -1, -'a', 'G', move_op_left,  true,  +50,  },
-    { +1, -1, -'a', 'G', move_op_left,  true,  +50,  },
-    { -1, +1, -'d', 'G', move_op_right, true,  +50,  },
-    { +1, +1, -'d', 'G', move_op_right, true,  +50,  },
-    // 不动射击
-    { -1, -1,  'a', 'G', move_op_stay,  true,  +50,  },
-    { +1, -1,  'a', 'G', move_op_stay,  true,  +50,  },
-    { -1, +1,  'd', 'G', move_op_stay,  true,  +50,  },
-    { +1, +1,  'd', 'G', move_op_stay,  true,  +50,  },
-    // 惩罚：移动到幽灵攻击范围里
-    { -1, -1,  'a', 'G', move_op_left,  false, -999,  },
-    { -1, -1,  'w', 'G', move_op_up,    false, -999,  },
-    { +1, -1,  'a', 'G', move_op_left,  false, -999,  },
-    { +1, -1,  's', 'G', move_op_down,  false, -999,  },
-    { -1, +1,  'd', 'G', move_op_right, false, -999,  },
-    { -1, +1,  'w', 'G', move_op_up,    false, -999,  },
-    { +1, +1,  'd', 'G', move_op_right, false, -999,  },
-    { +1, +1,  's', 'G', move_op_down,  false, -999,  },
-    { -1, -1,  'a', 'G', move_op_left,  true,  -999,  },
-    { -1, -1,  'w', 'G', move_op_up,    true,  -999,  },
-    { +1, -1,  'a', 'G', move_op_left,  true,  -999,  },
-    { +1, -1,  's', 'G', move_op_down,  true,  -999,  },
-    { -1, +1,  'd', 'G', move_op_right, true,  -999,  },
-    { -1, +1,  'w', 'G', move_op_up,    true,  -999,  },
-    { +1, +1,  'd', 'G', move_op_right, true,  -999,  },
-    { +1, +1,  's', 'G', move_op_down,  true,  -999,  },
-};
-
+#ifdef ALGORITHM_BULLET_DEFINE
 struct strategy bullet_strategys[] = {
 /*
      1
@@ -510,6 +445,7 @@ struct strategy bullet_strategys[] = {
     { 0,  +2,  'a', '<', move_op_right, true,  +100, },
     { 0,  -2,  'd', '>', move_op_left,  true,  +100, },
 };
+#endif
 
 static bool dist_bound_check_pass(class server_data &m,
         int r, int c, int dr, int dc, int min_dist, int max_dist) {
@@ -530,24 +466,31 @@ static bool dist_bound_check_pass(class server_data &m,
     return true;
 }
 
-// struct strategy *ghost_strategys;
+struct strategy *ghost_strategys;
 struct strategy *player_strategys;
-// struct strategy *bullet_strategys;
+#ifndef ALGORITHM_BULLET_DEFINE
+struct strategy *bullet_strategys;
+#endif
 int ghost_strategys_len;
 int player_strategys_len;
 int bullet_strategys_len;
 
 void init_algorithm() {
-    // ghost_strategys_len = new_and_load_strategys("config/ghost.json", ghost_strategys);
-    ghost_strategys_len = sizeof(ghost_strategys) / sizeof(*ghost_strategys);
+    ghost_strategys_len = new_and_load_strategys("config/ghost.json", ghost_strategys);
     player_strategys_len = new_and_load_strategys("config/player.json", player_strategys);
+
+#ifndef ALGORITHM_BULLET_DEFINE
+#else
     bullet_strategys_len = sizeof(bullet_strategys) / sizeof(*bullet_strategys);
+#endif
 }
 
 void deinit_algorithm() {
-    // delete[] ghost_strategys;
+    delete[] ghost_strategys;
     delete[] player_strategys;
-    // delete[] bullet_strategys;
+#ifndef ALGORITHM_BULLET_DEFINE
+    delete[] bullet_strategys;
+#endif
 }
 
 // dmin: min dist
