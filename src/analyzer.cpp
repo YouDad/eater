@@ -8,7 +8,7 @@
 #include "modules/draw.h"
 
 const int map_size = 25;
-int main() {
+int main(int argc, char **argv) {
     int ptr = 0;
     auto fp = fopen(".record", "r");
 
@@ -25,6 +25,11 @@ int main() {
         printf("\n");
     }
 
+    int player;
+    sscanf(argv[1], "%d", &player);
+
+    // strings size base 0
+    int str_size = strings.size() - 1;
 
     while (!feof(stdin)) {
         char buf[16];
@@ -39,10 +44,10 @@ int main() {
             }
         }
 
-        draw((char *)strings[ptr++].c_str(), map_size, 0);
-        printf("round (%d/%d)\n\033[1A", ptr, strings.size() - 1);
-        if (ptr == strings.size()) {
-            ptr--;
+        draw((char *)strings[ptr].c_str(), map_size, player);
+        printf("round (%d/%d)\n\033[1A", ptr, str_size);
+        if (ptr < str_size) {
+            ptr++;
         }
     }
 
