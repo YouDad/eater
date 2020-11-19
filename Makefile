@@ -21,8 +21,8 @@ src:
 test: src
 	make clean
 	make -C test/
-	rm -rf $(OUTDIR)
-	mkdir -p $(OUTDIR)
+	# rm -rf $(OUTDIR)
+	# mkdir -p $(OUTDIR)
 	make install -C test/
 	make clean
 

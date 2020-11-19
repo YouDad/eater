@@ -17,22 +17,11 @@
 // #define ALGORITHM_DEBUG_CHAR_GRAPH
 // #define ALGORITHM_DEBUG_ALGORITHM
 
+#include "modules/strategy.h"
+
 using std::vector;
 using std::pair;
 using std::make_pair;
-typedef enum move_operating mop_t;
-typedef pair<mop_t, bool> op_t;
-typedef vector<op_t> ops_t;
-
-typedef struct special_judge {
-    mop_t move_op;
-    bool is_fire;
-    double trend;
-} spjdg_t;
-typedef vector<spjdg_t> spjdgs_t;
-
-typedef spjdgs_t(* special_func_t)(class server_data &m,
-        int dr, int dc, char ch);
 
 static bool is_wall(char ch) {
     return ch == '9';
@@ -353,47 +342,6 @@ static op_t normal_algorithm(class server_data &m, spjdgs_t &spjdg_ops) {
     return make_pair(optimal_move_op, optimal_is_fire);
 }
 
-struct strategy {
-    int dr;
-    int dc;
-    char we;      // 0 for any
-    char player;  // 0 for any
-    mop_t move;
-    bool is_fire;
-    double trend;
-};
-
-static void exec_strategys(struct strategy *strategys, int len,
-        spjdgs_t &ops, class server_data &m, int dr, int dc) {
-    int r, c;
-    m.get_my_pos(r, c);
-    char we = m.get(r, c);
-    char player = m.get(r + dr, c + dc);
-
-    for (int i = 0; i < len; i++) {
-        auto& s = strategys[i];
-
-        if (s.we > 0 && we != s.we) {
-            continue;
-        }
-        if (s.we < 0 && we == -s.we) {
-            continue;
-        }
-
-        if (s.player > 0 && player != s.player) {
-            continue;
-        }
-        if (s.player < 0 && player == -s.player) {
-            continue;
-        }
-
-        if (s.dr != dr || s.dc != dc) {
-            continue;
-        }
-
-        ops.push_back(spjdg_t{s.move, s.is_fire, s.trend});
-    }
-}
 
 struct strategy player_strategys[] = {
 /*
