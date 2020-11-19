@@ -58,7 +58,7 @@ int main(int argc, const char **argv) {
     int map_line_size = get_map_size();
     char *buf;
     if (map_line_size > 0) {
-        buf = new char [map_line_size * map_line_size + 100];
+        buf = new char [map_line_size * map_line_size + 200];
     }
 
     int player_id = get_player_id();

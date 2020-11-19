@@ -190,7 +190,7 @@ int wait_for_start() {
 
         char *start_buf = strstr(buf, "[START");
         ret = sscanf(start_buf, "[START %d %d]", &player_id, &map_size);
-        map_buf_size = map_size * map_size + 100;
+        map_buf_size = map_size * map_size + 200;
         if (ret != 2) {
             printf("start recv: %s\n", buf);
             return 1;

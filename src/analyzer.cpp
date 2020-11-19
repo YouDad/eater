@@ -14,7 +14,7 @@ int main() {
 
     std::vector<std::string> strings;
     while (!feof(fp)) {
-        char buf[map_size * map_size + 100];
+        char buf[map_size * map_size + 200];
         fgets(buf, sizeof(buf), fp);
         strings.push_back(buf);
     }
@@ -24,6 +24,7 @@ int main() {
     for (int i = 0; i < map_size; i++) {
         printf("\n");
     }
+
 
     while (!feof(stdin)) {
         char buf[16];
